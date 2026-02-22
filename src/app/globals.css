@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 220 20% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 20% 10%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 46%;
+    --accent: 142 70% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 80% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 142 70% 45%;
+    --chart-1: 142 70% 45%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 45 93% 47%;
+    --chart-4: 0 80% 60%;
+    --chart-5: 270 70% 60%;
+    --radius: 0.75rem;
+    --success: 142 70% 45%;
+    --warning: 45 93% 47%;
+    --info: 199 89% 48%;
+  }
+  .dark {
+    --background: 224 20% 6%;
+    --foreground: 210 20% 98%;
+    --card: 224 20% 9%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 20% 9%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 224 15% 15%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 224 15% 15%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 142 70% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 224 15% 18%;
+    --input: 224 15% 18%;
+    --ring: 142 70% 45%;
+    --chart-1: 142 70% 50%;
+    --chart-2: 199 89% 55%;
+    --chart-3: 45 93% 55%;
+    --chart-4: 0 80% 60%;
+    --chart-5: 270 70% 60%;
+    --success: 142 70% 50%;
+    --warning: 45 93% 55%;
+    --info: 199 89% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+
+/* FAB animation */
+@keyframes fab-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+  50% { box-shadow: 0 0 0 12px hsl(var(--primary) / 0); }
+}
+.fab-pulse { animation: fab-pulse 2s infinite; }
+
+/* Glass effect */
+.glass {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background: hsl(var(--card) / 0.7);
+}
+
+/* Status badges */
+.status-paid { @apply bg-emerald-500/15 text-emerald-600 dark:text-emerald-400; }
+.status-pending { @apply bg-zinc-500/15 text-zinc-600 dark:text-zinc-400; }
+.status-partial { @apply bg-amber-500/15 text-amber-600 dark:text-amber-400; }
+.status-overdue { @apply bg-red-500/15 text-red-600 dark:text-red-400; }
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--chart-2)));
+}
