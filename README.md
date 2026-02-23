@@ -8,7 +8,7 @@
 
 # 💰 Cash Pro v2
 
-> **Mini-ERP con UX tipo Uber/Rappi para pequeños negocios.** Factura rápido, controla tu inventario, rastrea clientes y sabe cuánto ganas realmente — todo desde una sola app.
+> **Mini-ERP con UX .** Factura rápido, controla tu inventario, rastrea clientes y sabe cuánto ganas realmente — todo desde una sola app.
 
 ---
 
