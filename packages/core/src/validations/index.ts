@@ -60,6 +60,30 @@ export const paymentInputSchema = z.object({
 });
 export type PaymentInput = z.infer<typeof paymentInputSchema>;
 
+export const purchaseItemInputSchema = z.object({
+  productId: z.string().min(1),
+  productName: z.string().min(1),
+  quantity: z.number().positive(),
+  unitCost: z.number().nonnegative(),
+});
+
+export const purchaseInputSchema = z.object({
+  supplierId: z.string().min(1, "Proveedor requerido"),
+  supplierName: z.string().min(1),
+  items: z.array(purchaseItemInputSchema).min(1, "Agrega al menos un producto"),
+  notes: z.string().default(""),
+});
+export type PurchaseInput = z.infer<typeof purchaseInputSchema>;
+
+export const supplierPaymentInputSchema = z.object({
+  purchaseOrderId: z.string().min(1),
+  amount: z.number().positive(),
+  method: paymentMethodSchema,
+  date: z.string(),
+  notes: z.string().default(""),
+});
+export type SupplierPaymentInput = z.infer<typeof supplierPaymentInputSchema>;
+
 export const expenseInputSchema = z.object({
   description: z.string().min(1, "Descripción requerida"),
   amount: z.number().positive(),

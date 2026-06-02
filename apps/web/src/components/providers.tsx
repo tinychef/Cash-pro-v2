@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import { clerkEnabled } from "@/lib/auth-config";
+import { CurrencySync } from "@/components/currency-sync";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -18,6 +20,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const tree = (
     <QueryClientProvider client={client}>
+      <CurrencySync />
+      <ServiceWorkerRegister />
       {children}
       <Toaster richColors position="top-center" />
     </QueryClientProvider>

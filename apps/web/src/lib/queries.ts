@@ -17,7 +17,9 @@ import type {
   Payment,
   ProfitAndLoss,
   Product,
+  PurchaseOrder,
   Supplier,
+  SupplierPayment,
 } from "@cash-pro/core";
 import { api } from "./api";
 
@@ -29,6 +31,9 @@ export const keys = {
   invoices: ["invoices"] as const,
   invoice: (id: string) => ["invoices", id] as const,
   payments: ["payments"] as const,
+  purchases: ["purchases"] as const,
+  purchase: (id: string) => ["purchases", id] as const,
+  supplierPayments: ["supplier-payments"] as const,
   dashboard: ["reports", "dashboard"] as const,
   pnl: ["reports", "pnl"] as const,
   settings: ["settings"] as const,
@@ -200,6 +205,40 @@ export function useCreatePayment() {
     (b: { invoiceId: string; amount: number; method: string; date: string; notes?: string }) =>
       api.post<Payment>("/payments", b),
     { invalidate: [keys.invoices, keys.payments, ...moneyKeys], success: "Pago registrado" },
+  );
+}
+
+// ---------------- Purchases & payables ----------------
+export function usePurchases() {
+  return useQuery({ queryKey: keys.purchases, queryFn: () => api.get<PurchaseOrder[]>("/purchases") });
+}
+export function usePurchase(id: string | undefined) {
+  return useQuery({
+    queryKey: keys.purchase(id ?? ""),
+    enabled: Boolean(id),
+    queryFn: () => api.get<PurchaseOrder>(`/purchases/${id}`),
+  });
+}
+export function useSupplierPayments() {
+  return useQuery({ queryKey: keys.supplierPayments, queryFn: () => api.get<SupplierPayment[]>("/supplier-payments") });
+}
+export interface NewPurchasePayload {
+  supplierId: string;
+  supplierName: string;
+  items: { productId: string; productName: string; quantity: number; unitCost: number }[];
+  notes: string;
+}
+export function useCreatePurchase() {
+  return useApiMutation((b: NewPurchasePayload) => api.post<PurchaseOrder>("/purchases", b), {
+    invalidate: [keys.purchases, keys.products],
+    success: "Compra registrada",
+  });
+}
+export function useCreateSupplierPayment() {
+  return useApiMutation(
+    (b: { purchaseOrderId: string; amount: number; method: string; date: string; notes?: string }) =>
+      api.post<SupplierPayment>("/supplier-payments", b),
+    { invalidate: [keys.purchases, keys.supplierPayments], success: "Pago a proveedor registrado" },
   );
 }
 

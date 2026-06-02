@@ -136,3 +136,33 @@ export function netCashFlow(payments: Payment[], expenses: Expense[]): number {
 export function nextInvoiceNumber(existingCount: number, prefix = "INV"): string {
   return `${prefix}-${String(existingCount + 1).padStart(3, "0")}`;
 }
+
+/** Total cost of a purchase order from its line items. */
+export function purchaseTotal(items: { quantity: number; unitCost: number }[]): number {
+  return items.reduce((s, it) => s + it.quantity * it.unitCost, 0);
+}
+
+/** Derive a purchase order status from total cost and amount paid to the supplier. */
+export function derivePurchaseStatus(
+  total: number,
+  paid: number,
+): "received" | "paid" | "partial" {
+  if (paid >= total && total > 0) return "paid";
+  if (paid > 0) return "partial";
+  return "received";
+}
+
+/** Total accounts payable across purchases not fully paid. */
+export function totalPayables(
+  purchases: { id: string; total: number; status: string }[],
+  supplierPayments: { purchaseOrderId: string; amount: number }[],
+): number {
+  return purchases
+    .filter((p) => p.status !== "paid")
+    .reduce((sum, po) => {
+      const paid = supplierPayments
+        .filter((sp) => sp.purchaseOrderId === po.id)
+        .reduce((s, sp) => s + sp.amount, 0);
+      return sum + (po.total - paid);
+    }, 0);
+}

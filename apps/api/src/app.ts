@@ -18,6 +18,7 @@ import { invoicesRouter } from "./routes/invoices.js";
 import { paymentsRouter } from "./routes/payments.js";
 import { reportsRouter } from "./routes/reports.js";
 import { settingsRouter } from "./routes/settings.js";
+import { purchasesRouter, supplierPaymentsRouter } from "./routes/purchases.js";
 import { devRouter } from "./routes/dev.js";
 
 export function createApp() {
@@ -51,6 +52,8 @@ export function createApp() {
   api.route("/expenses", crudRouter(expenses, expenseInputSchema, "expenses"));
   api.route("/invoices", invoicesRouter);
   api.route("/payments", paymentsRouter);
+  api.route("/purchases", purchasesRouter);
+  api.route("/supplier-payments", supplierPaymentsRouter);
   api.route("/reports", reportsRouter);
   api.route("/settings", settingsRouter);
 

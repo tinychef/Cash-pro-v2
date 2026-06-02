@@ -162,6 +162,11 @@ export default function InvoicesPage() {
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-border flex gap-2">
+                    <Link href={`/invoices/${inv.id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full gap-2 rounded-xl text-xs">
+                        Ver detalle
+                      </Button>
+                    </Link>
                     {inv.status !== "paid" && (
                       <Button variant="outline" size="sm" className="flex-1 gap-2 rounded-xl text-xs" onClick={() => openPayDialog(inv.id)}>
                         <CreditCard className="h-3.5 w-3.5" /> Registrar Pago

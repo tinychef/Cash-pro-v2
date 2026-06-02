@@ -5,10 +5,25 @@
 const DEFAULT_LOCALE = "es";
 const DEFAULT_CURRENCY = "USD";
 
+// Runtime-configurable display defaults (set once from company settings).
+let _config: { currency: string; locale: string } = {
+  currency: DEFAULT_CURRENCY,
+  locale: "es-VE",
+};
+
+/** Override the default currency/locale used by currency() across the app. */
+export function setCurrencyConfig(config: Partial<{ currency: string; locale: string }>) {
+  _config = { ..._config, ...config };
+}
+
+export function getCurrencyConfig() {
+  return _config;
+}
+
 export function currency(
   n: number,
-  currencyCode: string = DEFAULT_CURRENCY,
-  locale: string = "es-VE",
+  currencyCode: string = _config.currency,
+  locale: string = _config.locale,
 ): string {
   return new Intl.NumberFormat(locale, {
     style: "currency",

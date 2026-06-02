@@ -15,6 +15,7 @@ import {
     Wallet,
     Truck,
     Settings,
+    ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ const primaryNav = [
 
 // Secondary destinations appear only in the sidebar / mobile sheet menu.
 const secondaryNav = [
+    { href: "/purchases", label: "Compras", icon: ShoppingBag },
     { href: "/suppliers", label: "Proveedores", icon: Truck },
     { href: "/settings", label: "Configuración", icon: Settings },
 ];

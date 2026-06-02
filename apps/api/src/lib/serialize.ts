@@ -14,6 +14,8 @@ export const numericFields = {
   suppliers: [] as string[],
   customers: [] as string[],
   purchase_orders: ["total"],
+  purchase_order_items: ["quantity", "unitCost"],
+  supplier_payments: ["amount"],
 } as const;
 
 export type NumericResource = keyof typeof numericFields;
