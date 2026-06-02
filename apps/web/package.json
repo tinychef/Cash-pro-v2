@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
   },
   "dependencies": {
     "@cash-pro/core": "workspace:*",
@@ -27,11 +27,14 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "@react-pdf/renderer": "^4.1.6",
     "lucide-react": "^0.575.0",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",
+    "react-hook-form": "^7.54.2",
     "recharts": "^3.7.0",
+    "sonner": "^1.7.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.11"

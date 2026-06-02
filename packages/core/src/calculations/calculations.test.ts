@@ -10,8 +10,8 @@ import {
   profitAndLoss,
   profitPerUnit,
   totalReceivables,
-} from "./index.js";
-import type { Expense, Invoice, InvoiceItem, Payment } from "../types/index.js";
+} from "./index";
+import type { Expense, Invoice, InvoiceItem, Payment } from "../types/index";
 
 // Fixtures derived from the original MVP seed data (store.ts).
 const item = (over: Partial<InvoiceItem>): InvoiceItem => ({

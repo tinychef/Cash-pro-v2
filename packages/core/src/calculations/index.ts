@@ -3,7 +3,7 @@
 // Lifted from the original Zustand store + format helpers so they
 // can be unit tested and reused across web / mobile / api.
 // ============================================================
-import type { Expense, Invoice, InvoiceStatus, Payment, ProfitAndLoss } from "../types/index.js";
+import type { Expense, Invoice, InvoiceStatus, Payment, ProfitAndLoss } from "../types/index";
 
 /** Minimal line shape needed to compute totals (id/names not required). */
 export type PricedLine = {
