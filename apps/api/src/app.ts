@@ -17,6 +17,7 @@ import { crudRouter } from "./lib/crud.js";
 import { invoicesRouter } from "./routes/invoices.js";
 import { paymentsRouter } from "./routes/payments.js";
 import { reportsRouter } from "./routes/reports.js";
+import { devRouter } from "./routes/dev.js";
 
 export function createApp() {
   const app = new Hono<AppEnv>();
@@ -32,6 +33,9 @@ export function createApp() {
   // Liveness probe (no tenant required).
   app.get("/health", (c) => c.json({ status: "ok", service: "cash-pro-api" }));
 
+  // Dev bootstrap (no tenant; self-disables when Clerk is configured).
+  app.route("/dev", devRouter);
+
   const api = new Hono<AppEnv>();
 
   // Apply Clerk middleware only when configured (keeps dev runnable).
@@ -40,10 +44,10 @@ export function createApp() {
   }
   api.use("*", tenant);
 
-  api.route("/products", crudRouter(products, productInputSchema));
-  api.route("/customers", crudRouter(customers, customerInputSchema));
-  api.route("/suppliers", crudRouter(suppliers, supplierInputSchema));
-  api.route("/expenses", crudRouter(expenses, expenseInputSchema));
+  api.route("/products", crudRouter(products, productInputSchema, "products"));
+  api.route("/customers", crudRouter(customers, customerInputSchema, "customers"));
+  api.route("/suppliers", crudRouter(suppliers, supplierInputSchema, "suppliers"));
+  api.route("/expenses", crudRouter(expenses, expenseInputSchema, "expenses"));
   api.route("/invoices", invoicesRouter);
   api.route("/payments", paymentsRouter);
   api.route("/reports", reportsRouter);

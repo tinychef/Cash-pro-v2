@@ -9,11 +9,12 @@ import { zValidator } from "@hono/zod-validator";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { ZodTypeAny } from "zod";
 import type { AppEnv } from "../context.js";
+import { serialize, serializeList, type NumericResource } from "./serialize.js";
 
 // Tables share these columns; we access them dynamically so one factory
 // serves many tables. Typed loosely on purpose.
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export function crudRouter(table: any, schema: ZodTypeAny) {
+export function crudRouter(table: any, schema: ZodTypeAny, resource: NumericResource) {
   const router = new Hono<AppEnv>();
 
   router.get("/", async (c) => {
@@ -24,7 +25,7 @@ export function crudRouter(table: any, schema: ZodTypeAny) {
       .from(table)
       .where(and(eq(table.companyId, companyId), isNull(table.deletedAt)))
       .orderBy(desc(table.createdAt));
-    return c.json(rows);
+    return c.json(serializeList(resource, rows));
   });
 
   router.get("/:id", async (c) => {
@@ -36,7 +37,7 @@ export function crudRouter(table: any, schema: ZodTypeAny) {
       .where(and(eq(table.id, c.req.param("id")), eq(table.companyId, companyId)))
       .limit(1);
     if (!rows[0]) return c.json({ error: "Not found" }, 404);
-    return c.json(rows[0]);
+    return c.json(serialize(resource, rows[0]));
   });
 
   router.post("/", zValidator("json", schema), async (c) => {
@@ -48,7 +49,7 @@ export function crudRouter(table: any, schema: ZodTypeAny) {
       .insert(table)
       .values({ ...input, companyId, createdBy: userId, syncStatus: "synced" })
       .returning();
-    return c.json(row, 201);
+    return c.json(serialize(resource, row), 201);
   });
 
   const updateSchema = "partial" in schema ? (schema as any).partial() : schema;
@@ -63,7 +64,7 @@ export function crudRouter(table: any, schema: ZodTypeAny) {
       .where(and(eq(table.id, c.req.param("id")), eq(table.companyId, companyId)))
       .returning();
     if (!row) return c.json({ error: "Not found" }, 404);
-    return c.json(row);
+    return c.json(serialize(resource, row));
   });
 
   router.delete("/:id", async (c) => {

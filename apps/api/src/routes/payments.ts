@@ -8,6 +8,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { deriveInvoiceStatus, paymentInputSchema } from "@cash-pro/core";
 import { invoices, payments, transactionsLog } from "@cash-pro/db";
 import type { AppEnv } from "../context.js";
+import { serialize, serializeList } from "../lib/serialize.js";
 
 export const paymentsRouter = new Hono<AppEnv>();
 
@@ -19,7 +20,7 @@ paymentsRouter.get("/", async (c) => {
     ? and(eq(payments.companyId, companyId), eq(payments.invoiceId, invoiceId), isNull(payments.deletedAt))
     : and(eq(payments.companyId, companyId), isNull(payments.deletedAt));
   const rows = await db.select().from(payments).where(where);
-  return c.json(rows);
+  return c.json(serializeList("payments", rows));
 });
 
 paymentsRouter.post("/", zValidator("json", paymentInputSchema), async (c) => {
@@ -78,5 +79,5 @@ paymentsRouter.post("/", zValidator("json", paymentInputSchema), async (c) => {
     return payment!;
   });
 
-  return c.json(created, 201);
+  return c.json(serialize("payments", created), 201);
 });

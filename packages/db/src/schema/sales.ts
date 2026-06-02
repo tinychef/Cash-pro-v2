@@ -3,7 +3,7 @@
 // Aggregate profit columns (cost_of_goods, gross_profit, profit_margin)
 // are written by @cash-pro/core at write time since they span line items.
 // ============================================================
-import { index, numeric, pgEnum, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, numeric, pgEnum, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { pgTable } from "drizzle-orm/pg-core";
 import { auditColumns, idColumn, syncColumns } from "./_shared";
 import { companies } from "./tenancy";
@@ -43,6 +43,7 @@ export const invoices = pgTable(
   (t) => ({
     byCompany: index("invoices_company_idx").on(t.companyId),
     byStatus: index("invoices_status_idx").on(t.companyId, t.status),
+    numberUnq: uniqueIndex("invoices_number_unq").on(t.companyId, t.number),
   }),
 );
 

@@ -1,18 +1,21 @@
 // ============================================================
 // Invoices: totals & profit are computed server-side via @cash-pro/core
-// so the stored aggregates are always consistent.
+// so the stored aggregates are always consistent. Creating an invoice
+// also decrements stock and records inventory movements + a unified
+// transactions_log entry, atomically.
 // ============================================================
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   deriveInvoiceStatus,
   invoiceInputSchema,
   invoiceTotals,
   nextInvoiceNumber,
 } from "@cash-pro/core";
-import { invoiceItems, invoices, transactionsLog } from "@cash-pro/db";
+import { inventoryMovements, invoiceItems, invoices, products, transactionsLog } from "@cash-pro/db";
 import type { AppEnv } from "../context.js";
+import { serialize, serializeList } from "../lib/serialize.js";
 
 export const invoicesRouter = new Hono<AppEnv>();
 
@@ -24,7 +27,7 @@ invoicesRouter.get("/", async (c) => {
     .from(invoices)
     .where(and(eq(invoices.companyId, companyId), isNull(invoices.deletedAt)))
     .orderBy(desc(invoices.createdAt));
-  return c.json(rows);
+  return c.json(serializeList("invoices", rows));
 });
 
 invoicesRouter.get("/:id", async (c) => {
@@ -37,11 +40,8 @@ invoicesRouter.get("/:id", async (c) => {
     .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)))
     .limit(1);
   if (!invoice) return c.json({ error: "Not found" }, 404);
-  const items = await db
-    .select()
-    .from(invoiceItems)
-    .where(eq(invoiceItems.invoiceId, id));
-  return c.json({ ...invoice, items });
+  const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
+  return c.json({ ...serialize("invoices", invoice), items: serializeList("invoice_items", items) });
 });
 
 invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
@@ -66,7 +66,7 @@ invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
       .values({
         companyId,
         number: nextInvoiceNumber(existing),
-        customerId: input.clientId,
+        customerId: input.clientId || null,
         customerName: input.clientName,
         subtotal: String(totals.subtotal),
         taxTotal: String(totals.taxTotal),
@@ -81,11 +81,13 @@ invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
       })
       .returning();
 
+    const invoiceId = invoice!.id;
+
     await tx.insert(invoiceItems).values(
       input.items.map((it) => ({
         companyId,
-        invoiceId: invoice!.id,
-        productId: it.productId,
+        invoiceId,
+        productId: it.productId || null,
         productName: it.productName,
         quantity: String(it.quantity),
         unitPrice: String(it.unitPrice),
@@ -95,11 +97,28 @@ invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
       })),
     );
 
+    // Decrement stock and record an inventory movement per line.
+    for (const it of input.items) {
+      if (!it.productId) continue;
+      await tx
+        .update(products)
+        .set({ stock: sql`${products.stock} - ${Math.round(it.quantity)}`, lastModifiedAt: new Date() })
+        .where(and(eq(products.id, it.productId), eq(products.companyId, companyId)));
+      await tx.insert(inventoryMovements).values({
+        companyId,
+        productId: it.productId,
+        type: "out",
+        quantity: Math.round(it.quantity),
+        reason: `Venta ${invoice!.number}`,
+        createdBy: userId,
+      });
+    }
+
     await tx.insert(transactionsLog).values({
       companyId,
       type: "sale",
       refTable: "invoices",
-      refId: invoice!.id,
+      refId: invoiceId,
       amount: String(totals.total),
       description: `Factura ${invoice!.number}`,
       createdBy: userId,
@@ -108,5 +127,5 @@ invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
     return invoice!;
   });
 
-  return c.json(created, 201);
+  return c.json(serialize("invoices", created), 201);
 });

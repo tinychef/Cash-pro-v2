@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS "invoices_number_unq" ON "invoices" USING btree ("company_id","number");
