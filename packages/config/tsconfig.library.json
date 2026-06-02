@@ -1,8 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
-  }
+  "_comment": "Internal packages are consumed as source (main -> src/index.ts), so no rootDir/outDir is set here; set them per-package only if a package emits to dist."
 }
