@@ -9,6 +9,7 @@ import {
   nextInvoiceNumber,
   profitAndLoss,
   profitPerUnit,
+  round2,
   totalReceivables,
 } from "./index";
 import type { Expense, Invoice, InvoiceItem, Payment } from "../types/index";
@@ -112,6 +113,24 @@ describe("P&L and cash flow", () => {
       { id: "p", invoiceId: "a", amount: 1160, method: "cash", date: "", notes: "" },
     ];
     expect(netCashFlow(payments, expenses)).toBe(960);
+  });
+});
+
+describe("monetary precision", () => {
+  it("round2 avoids float drift", () => {
+    expect(round2(0.1 + 0.2)).toBe(0.3);
+    expect(round2(1.005)).toBe(1.01); // half-up
+    expect(round2(19.999)).toBe(20);
+  });
+
+  it("invoice totals are rounded to 2 decimals", () => {
+    const t = invoiceTotals([
+      item({ quantity: 3, unitPrice: 9.99, costPrice: 4.5, taxRate: 0.16 }),
+    ]);
+    // 3 * 9.99 = 29.97 ; tax = 4.7952 -> 4.80 ; total 34.77
+    expect(t.subtotal).toBe(29.97);
+    expect(t.taxTotal).toBe(4.8);
+    expect(t.total).toBe(34.77);
   });
 });
 

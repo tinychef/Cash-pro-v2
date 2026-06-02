@@ -13,6 +13,11 @@ export type PricedLine = {
   taxRate: number;
 };
 
+/** Round to 2 decimals deterministically (avoids float cent drift). */
+export function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
 /** Profit margin as a ratio (0..1). Guards against divide-by-zero. */
 export function marginRatio(salePrice: number, purchasePrice: number): number {
   if (salePrice <= 0) return 0;
@@ -61,8 +66,11 @@ export function invoiceTotals(items: PricedLine[]): InvoiceTotals {
     costTotal += item.costPrice * item.quantity;
   }
 
-  const total = subtotal + taxTotal;
-  const grossProfit = subtotal - costTotal;
+  subtotal = round2(subtotal);
+  taxTotal = round2(taxTotal);
+  costTotal = round2(costTotal);
+  const total = round2(subtotal + taxTotal);
+  const grossProfit = round2(subtotal - costTotal);
   const profitMargin = subtotal > 0 ? grossProfit / subtotal : 0;
 
   return { subtotal, taxTotal, total, costTotal, grossProfit, profitMargin };
@@ -108,11 +116,11 @@ export function totalReceivables(invoices: Invoice[], payments: Payment[]): numb
  * Revenue is taken from invoice subtotals (pre-tax), COGS from costTotal.
  */
 export function profitAndLoss(invoices: Invoice[], expenses: Expense[]): ProfitAndLoss {
-  const revenue = invoices.reduce((s, i) => s + i.subtotal, 0);
-  const cogs = invoices.reduce((s, i) => s + i.costTotal, 0);
-  const expensesTotal = expenses.reduce((s, e) => s + e.amount, 0);
-  const grossProfit = revenue - cogs;
-  const netProfit = grossProfit - expensesTotal;
+  const revenue = round2(invoices.reduce((s, i) => s + i.subtotal, 0));
+  const cogs = round2(invoices.reduce((s, i) => s + i.costTotal, 0));
+  const expensesTotal = round2(expenses.reduce((s, e) => s + e.amount, 0));
+  const grossProfit = round2(revenue - cogs);
+  const netProfit = round2(grossProfit - expensesTotal);
 
   return {
     revenue,
@@ -129,7 +137,7 @@ export function profitAndLoss(invoices: Invoice[], expenses: Expense[]): ProfitA
 export function netCashFlow(payments: Payment[], expenses: Expense[]): number {
   const inflow = payments.reduce((s, p) => s + p.amount, 0);
   const outflow = expenses.reduce((s, e) => s + e.amount, 0);
-  return inflow - outflow;
+  return round2(inflow - outflow);
 }
 
 /** Next sequential invoice number, e.g. INV-006 given 5 existing. */
@@ -139,7 +147,7 @@ export function nextInvoiceNumber(existingCount: number, prefix = "INV"): string
 
 /** Total cost of a purchase order from its line items. */
 export function purchaseTotal(items: { quantity: number; unitCost: number }[]): number {
-  return items.reduce((s, it) => s + it.quantity * it.unitCost, 0);
+  return round2(items.reduce((s, it) => s + it.quantity * it.unitCost, 0));
 }
 
 /** Derive a purchase order status from total cost and amount paid to the supplier. */

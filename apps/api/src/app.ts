@@ -3,6 +3,8 @@
 // ============================================================
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { bodyLimit } from "hono/body-limit";
 import { clerkMiddleware } from "@hono/clerk-auth";
 import {
   customerInputSchema,
@@ -13,6 +15,8 @@ import {
 import { customers, expenses, products, suppliers } from "@cash-pro/db";
 import type { AppEnv } from "./context.js";
 import { tenant } from "./middleware/tenant.js";
+import { requireWrite } from "./middleware/authz.js";
+import { rateLimit } from "./middleware/rate-limit.js";
 import { crudRouter } from "./lib/crud.js";
 import { invoicesRouter } from "./routes/invoices.js";
 import { paymentsRouter } from "./routes/payments.js";
@@ -24,12 +28,20 @@ import { devRouter } from "./routes/dev.js";
 export function createApp() {
   const app = new Hono<AppEnv>();
 
+  const isProd = process.env.NODE_ENV === "production";
+
+  app.use("*", secureHeaders());
   app.use("*", cors({ origin: process.env.WEB_ORIGIN?.split(",") ?? "*" }));
+  // Cap request bodies (defense against memory-exhaustion payloads).
+  app.use("*", bodyLimit({ maxSize: 1024 * 1024 }));
+  // Basic abuse protection (per-instance, IP-keyed).
+  app.use("*", rateLimit({ windowMs: 60_000, max: 300 }));
 
   app.onError((err, c) => {
     // eslint-disable-next-line no-console
     console.error(err);
-    return c.json({ error: err.message || "Internal Server Error" }, 500);
+    // Don't leak internal error details to clients in production.
+    return c.json({ error: isProd ? "Internal Server Error" : err.message }, 500);
   });
 
   // Liveness probe (no tenant required).
@@ -45,6 +57,7 @@ export function createApp() {
     api.use("*", clerkMiddleware());
   }
   api.use("*", tenant);
+  api.use("*", requireWrite);
 
   api.route("/products", crudRouter(products, productInputSchema, "products"));
   api.route("/customers", crudRouter(customers, customerInputSchema, "customers"));

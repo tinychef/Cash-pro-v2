@@ -77,8 +77,17 @@ export const tenant: MiddlewareHandler<AppEnv> = async (c, next) => {
       orgName: (auth as { orgSlug?: string | null }).orgSlug ?? null,
     });
 
+    // Derive role: personal account → owner; org member → from Clerk org role.
+    const orgRole = (auth as { orgRole?: string | null }).orgRole ?? "";
+    let role: "owner" | "admin" | "member" | "viewer";
+    if (!auth.orgId) role = "owner";
+    else if (orgRole.includes("admin")) role = "admin";
+    else if (orgRole.includes("viewer") || orgRole.includes("guest")) role = "viewer";
+    else role = "member";
+
     c.set("companyId", companyId);
     c.set("userId", auth.userId);
+    c.set("role", role);
     return next();
   }
 
@@ -92,5 +101,6 @@ export const tenant: MiddlewareHandler<AppEnv> = async (c, next) => {
   }
   c.set("companyId", companyId);
   c.set("userId", c.req.header("x-user-id") ?? "dev-user");
+  c.set("role", "owner");
   return next();
 };
