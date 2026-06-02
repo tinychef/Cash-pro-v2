@@ -1,16 +1,42 @@
 // ============================================================
 // Typed API client for the Cash Pro Hono backend.
-// Sends the tenant header (dev) — swap for Clerk auth headers later.
+//
+// Auth headers adapt to the mode:
+//  - Clerk on  → Authorization: Bearer <session token> (tenant resolved
+//    server-side from the verified token / active organization)
+//  - dev       → x-company-id from the bootstrapped demo company
 // ============================================================
 import { API_BASE, getCompanyId } from "./company";
+import { clerkEnabled } from "./auth-config";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+async function getClerkToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const w = window as any;
+  for (let i = 0; i < 50 && !w.Clerk?.loaded; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  try {
+    return (await w.Clerk?.session?.getToken?.()) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  if (clerkEnabled) {
+    const token = await getClerkToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+  return { "x-company-id": await getCompanyId() };
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const companyId = await getCompanyId();
   const res = await fetch(`${API_BASE}/api${path}`, {
     ...init,
     headers: {
       "content-type": "application/json",
-      "x-company-id": companyId,
+      ...(await authHeaders()),
       ...init?.headers,
     },
   });

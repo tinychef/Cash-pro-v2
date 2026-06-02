@@ -19,6 +19,13 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { clerkEnabled } from "@/lib/auth-config";
+import { UserButton } from "@clerk/nextjs";
+
+function AccountButton() {
+    if (!clerkEnabled) return null;
+    return <UserButton afterSignOutUrl="/sign-in" />;
+}
 
 // Primary destinations appear in the mobile bottom bar and the sidebar.
 const primaryNav = [
@@ -41,6 +48,11 @@ const allNav = [...primaryNav, ...secondaryNav];
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Auth screens render without the app chrome.
+    if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
+        return <>{children}</>;
+    }
 
     return (
         <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -83,7 +95,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </nav>
 
                 {/* Bottom */}
-                <div className="p-4 border-t border-border">
+                <div className="p-4 border-t border-border space-y-3">
+                    <div className="flex items-center gap-2">
+                        <AccountButton />
+                    </div>
                     <div className="rounded-lg bg-primary/5 p-3">
                         <p className="text-xs font-semibold text-primary">Cash Pro v2</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -142,6 +157,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         </Sheet>
                         <h1 className="text-base font-bold">Cash Pro</h1>
                     </div>
+                    <AccountButton />
                 </header>
 
                 {/* Page Content */}
