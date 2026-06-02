@@ -1,120 +1,96 @@
 <p align="center">
+  <img src="https://img.shields.io/badge/Turborepo-monorepo-EF4444?style=for-the-badge&logo=turborepo" />
   <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js" />
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript" />
-  <img src="https://img.shields.io/badge/Tailwind-3-38bdf8?style=for-the-badge&logo=tailwindcss" />
-  <img src="https://img.shields.io/badge/Zustand-4-orange?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Recharts-2-22c55e?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Hono-4-E36002?style=for-the-badge&logo=hono" />
+  <img src="https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql" />
 </p>
 
 # 💰 Cash Pro v2
 
-> **Mini-ERP con UX .** Factura rápido, controla tu inventario, rastrea clientes y sabe cuánto ganas realmente — todo desde una sola app.
+> **ERP migrable, offline-first, con UX tipo Uber/Rappi.** Factura en segundos, controla inventario y costos, y sabe **cuánto ganas realmente** — sin atarte a ningún proveedor cloud.
 
 ---
 
-## ✨ Características principales
+## ✨ Características
 
 | Módulo | Descripción |
 |--------|-------------|
-| 📊 **Dashboard** | KPIs en tiempo real: ventas del día, utilidad bruta, cuentas por cobrar y flujo de caja neto. Gráfico de ingresos vs gastos (últimos 7 días). |
-| ⚡ **Facturación rápida** | Crea facturas en <30 segundos. Búsqueda de productos, cálculo automático de subtotal, impuestos, total, margen % y ganancia neta. |
-| 📦 **Productos e inventario** | CRUD completo con precio compra/venta, margen calculado, alertas de stock bajo y filtros (todos, activos, stock bajo). |
-| 👥 **Clientes** | Gestión de clientes con historial de facturas y resumen de cuentas por cobrar por cliente. |
-| 💳 **Pagos** | Estados de factura (pendiente, parcial, pagada, vencida). Registro de pagos parciales y totales con método de pago. |
-| 📈 **Reportes** | Estado de resultados (P&L) por rango de fechas, flujo de efectivo acumulado y márgenes bruto/neto. |
+| 📊 **Dashboard** | KPIs en tiempo real: ventas del día, utilidad, cuentas por cobrar, flujo de caja neto + gráfico ingresos vs gastos. |
+| ⚡ **Facturación rápida** | Factura en <30s con búsqueda de productos y **margen/utilidad en vivo**. Descuenta inventario automáticamente. |
+| 📦 **Productos** | Precio de **compra vs venta** separados; margen y ganancia/unidad calculados en la base de datos (columnas GENERATED). Alertas de stock bajo. |
+| 👥 **Clientes / Proveedores** | CRUD completo; balance de cuentas por cobrar por cliente. |
+| 💳 **Pagos** | Estados automáticos (pendiente → parcial → pagada → vencida) al registrar pagos. |
+| 💸 **Gastos** | Registro por categoría que alimenta el P&L y el flujo de caja. |
+| 📈 **Reportes** | Estado de resultados (P&L), flujo de efectivo acumulado y márgenes, por rango de fechas. |
+| 🧾 **PDF** | Generación de facturas en PDF en el navegador (offline-capable). |
+| ⚙️ **Configuración** | Nombre de empresa, moneda e impuesto por defecto. |
 
-## 🖼️ Screenshots
-
-<table>
-  <tr>
-    <td align="center"><strong>Dashboard</strong></td>
-    <td align="center"><strong>Nueva Factura</strong></td>
-  </tr>
-  <tr>
-    <td><img src="docs/dashboard.png" alt="Dashboard" width="400"/></td>
-    <td><img src="docs/invoice.png" alt="Nueva Factura" width="400"/></td>
-  </tr>
-</table>
-
-## 🛠️ Tech Stack
+## 🏗️ Arquitectura (monorepo Turborepo + pnpm)
 
 ```
-Frontend        Next.js 14 (App Router) + TypeScript
-Estilos         Tailwind CSS + shadcn/ui (18 componentes)
-Estado          Zustand (persistido en localStorage)
-Gráficos        Recharts
-Iconos          Lucide React
-Utilidades      date-fns, clsx, class-variance-authority
+apps/
+  web/    Next.js 14 PWA (TanStack Query + shadcn/ui)
+  api/    Hono 4 + Clerk + Drizzle (Dockerizable, Cloud Run-ready)
+  mobile/ Expo (fase siguiente)
+packages/
+  core/   tipos + lógica de negocio pura (márgenes, P&L, totales) + Zod  ·  9 tests
+  db/     schema Drizzle (17 tablas) + migraciones SQL puras
+  sync/   PowerSync (fase siguiente)
+  ui/     primitivas compartidas
+  config/ presets tsconfig/eslint/prettier
+docker/   api/web Dockerfiles + docker-compose
 ```
 
-### 🗺️ Roadmap (futuro)
+**Principios:** PostgreSQL estándar (portable a Supabase/Cloud SQL/RDS/Neon), auth con Clerk,
+storage S3-compatible (R2), un solo paquete de lógica para web/mobile/api, Docker desde el día 1.
+
+## 🛠️ Stack
 
 ```
-Backend         Hono.js (TypeScript, edge-ready)
-Base de datos   PostgreSQL + Drizzle ORM
-Autenticación   Clerk con Organizations (multi-empresa)
-PDFs            @react-pdf/renderer
-Storage         Cloudflare R2 (S3-compatible)
-Móvil           React Native / Capacitor
-Offline         Service Worker + IndexedDB
+Web        Next.js 14 · TypeScript · Tailwind · shadcn/ui · TanStack Query · Recharts · @react-pdf/renderer
+API        Hono 4 · Drizzle ORM · Clerk · Zod
+DB         PostgreSQL 16 (sin features propietarias)
+Tooling    Turborepo · pnpm · Vitest · GitHub Actions CI
 ```
 
-## 🚀 Instalación
+## 🚀 Desarrollo local
 
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/tinychef/cash-pro-v2.git
-cd cash-pro-v2
+pnpm install
 
-# 2. Instalar dependencias
-npm install
+# Opción A — todo con Docker (postgres + api + web)
+docker compose -f docker/docker-compose.yml up
 
-# 3. Ejecutar en desarrollo
-npm run dev
+# Opción B — manual
+#  1) Postgres (docker o local) y aplicar migraciones
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/cashpro pnpm --filter @cash-pro/db migrate
+#  2) API (modo dev sin Clerk → usa header x-company-id; el front lo gestiona)
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/cashpro pnpm --filter @cash-pro/api dev
+#  3) Web
+pnpm --filter @cash-pro/web dev   # http://localhost:3000
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+> En modo dev (sin `CLERK_SECRET_KEY`), la web crea automáticamente una empresa demo con datos
+> de ejemplo vía `POST /dev/bootstrap`. Con Clerk configurado, la Organización resuelve la empresa.
 
-## 📁 Estructura del proyecto
-
-```
-src/
-├── app/
-│   ├── page.tsx              # Dashboard
-│   ├── layout.tsx            # Layout raíz + SEO
-│   ├── globals.css           # Tema, animaciones, utilidades
-│   ├── products/page.tsx     # CRUD Productos
-│   ├── clients/page.tsx      # CRUD Clientes
-│   ├── invoices/
-│   │   ├── page.tsx          # Lista de facturas + pagos
-│   │   └── new/page.tsx      # Facturación rápida
-│   └── reports/page.tsx      # P&L + Flujo de caja
-├── components/
-│   ├── app-shell.tsx         # Sidebar + Bottom Nav + FAB
-│   └── ui/                   # 18 componentes shadcn/ui
-└── lib/
-    ├── types.ts              # Interfaces TypeScript
-    ├── store.ts              # Zustand store + datos demo
-    ├── format.ts             # Formateo: moneda, %, fechas
-    └── utils.ts              # cn() helper (Tailwind merge)
-```
-
-## 🎨 Diseño
-
-- **UX tipo Uber/Rappi**: Pocas pantallas, botones grandes, flujos simples
-- **Responsive**: Sidebar en desktop, bottom navigation en móvil
-- **FAB flotante**: Botón "Nueva Venta" siempre visible con animación pulse
-- **Tema premium**: Acento verde (#16a34a), bordes suaves, glassmorphism
-- **Datos de demo**: 6 productos, 4 clientes, 5 facturas y gastos precargados
-
-## 📜 Scripts disponibles
+## 📜 Scripts (raíz)
 
 | Comando | Descripción |
 |---------|-------------|
-| `npm run dev` | Servidor de desarrollo (localhost:3000) |
-| `npm run build` | Build de producción |
-| `npm run start` | Servidor de producción |
-| `npm run lint` | Verificar código con ESLint |
+| `pnpm dev` | Levanta todas las apps (turbo) |
+| `pnpm build` | Build de todo el workspace |
+| `pnpm typecheck` | Typecheck de todos los paquetes |
+| `pnpm test` | Tests (Vitest) |
+| `pnpm db:generate` / `pnpm db:migrate` | Migraciones Drizzle |
+
+## 🗺️ Roadmap
+
+- ✅ Monorepo portable · core/db/api · web cableada a API · Docker · CI · PDF
+- ⏳ App móvil (Expo) + **offline real** con PowerSync (`packages/sync`)
+- ⏳ Compras a proveedores + cuentas por pagar · roles/multi-usuario · facturación fiscal (DIAN/SAT)
+
+Ver `docs/PLAN.md`, `docs/STACK.md`, `docs/ARCHITECTURE.md`, `docs/RISKS.md`.
 
 ## 📄 Licencia
 
