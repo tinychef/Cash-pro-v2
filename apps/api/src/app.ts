@@ -17,6 +17,7 @@ import { crudRouter } from "./lib/crud.js";
 import { invoicesRouter } from "./routes/invoices.js";
 import { paymentsRouter } from "./routes/payments.js";
 import { reportsRouter } from "./routes/reports.js";
+import { settingsRouter } from "./routes/settings.js";
 import { devRouter } from "./routes/dev.js";
 
 export function createApp() {
@@ -51,6 +52,7 @@ export function createApp() {
   api.route("/invoices", invoicesRouter);
   api.route("/payments", paymentsRouter);
   api.route("/reports", reportsRouter);
+  api.route("/settings", settingsRouter);
 
   app.route("/api", api);
   return app;

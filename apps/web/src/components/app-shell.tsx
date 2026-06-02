@@ -13,12 +13,15 @@ import {
     Menu,
     DollarSign,
     Wallet,
+    Truck,
+    Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-const navItems = [
+// Primary destinations appear in the mobile bottom bar and the sidebar.
+const primaryNav = [
     { href: "/", label: "Inicio", icon: LayoutDashboard },
     { href: "/invoices", label: "Facturas", icon: FileText },
     { href: "/products", label: "Productos", icon: Package },
@@ -26,6 +29,14 @@ const navItems = [
     { href: "/expenses", label: "Gastos", icon: Wallet },
     { href: "/reports", label: "Reportes", icon: BarChart3 },
 ];
+
+// Secondary destinations appear only in the sidebar / mobile sheet menu.
+const secondaryNav = [
+    { href: "/suppliers", label: "Proveedores", icon: Truck },
+    { href: "/settings", label: "Configuración", icon: Settings },
+];
+
+const allNav = [...primaryNav, ...secondaryNav];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -48,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                 {/* Nav Links */}
                 <nav className="flex-1 px-3 py-4 space-y-1">
-                    {navItems.map((item) => {
+                    {allNav.map((item) => {
                         const active =
                             item.href === "/"
                                 ? pathname === "/"
@@ -104,7 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     </div>
                                 </div>
                                 <nav className="px-3 py-4 space-y-1">
-                                    {navItems.map((item) => {
+                                    {allNav.map((item) => {
                                         const active =
                                             item.href === "/"
                                                 ? pathname === "/"
@@ -141,7 +152,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {/* ─── Mobile Bottom Nav ─── */}
                 <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-card/90 glass">
                     <div className="grid grid-cols-6 gap-0">
-                        {navItems.map((item) => {
+                        {primaryNav.map((item) => {
                             const active =
                                 item.href === "/"
                                     ? pathname === "/"

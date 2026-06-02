@@ -31,7 +31,15 @@ export const keys = {
   payments: ["payments"] as const,
   dashboard: ["reports", "dashboard"] as const,
   pnl: ["reports", "pnl"] as const,
+  settings: ["settings"] as const,
 };
+
+export interface CompanySettings {
+  name: string;
+  currency: string;
+  locale: string;
+  defaultTaxRate: number;
+}
 
 // ---- Invoice shape from API (customer* naming) -> UI (client* naming) ----
 type ApiInvoice = Invoice & { customerId: string | null; customerName: string };
@@ -73,6 +81,9 @@ export function useDashboard() {
 }
 export function usePnl() {
   return useQuery({ queryKey: keys.pnl, queryFn: () => api.get<ProfitAndLoss>("/reports/pnl") });
+}
+export function useSettings() {
+  return useQuery({ queryKey: keys.settings, queryFn: () => api.get<CompanySettings>("/settings") });
 }
 
 // ---------------- Mutation helper ----------------
@@ -190,4 +201,12 @@ export function useCreatePayment() {
       api.post<Payment>("/payments", b),
     { invalidate: [keys.invoices, keys.payments, ...moneyKeys], success: "Pago registrado" },
   );
+}
+
+// ---------------- Settings ----------------
+export function useUpdateSettings() {
+  return useApiMutation((b: Partial<CompanySettings>) => api.put<CompanySettings>("/settings", b), {
+    invalidate: [keys.settings],
+    success: "Configuración guardada",
+  });
 }
