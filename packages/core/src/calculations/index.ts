@@ -3,14 +3,15 @@
 // Lifted from the original Zustand store + format helpers so they
 // can be unit tested and reused across web / mobile / api.
 // ============================================================
-import type {
-  Expense,
-  Invoice,
-  InvoiceItem,
-  InvoiceStatus,
-  Payment,
-  ProfitAndLoss,
-} from "../types/index.js";
+import type { Expense, Invoice, InvoiceStatus, Payment, ProfitAndLoss } from "../types/index.js";
+
+/** Minimal line shape needed to compute totals (id/names not required). */
+export type PricedLine = {
+  quantity: number;
+  unitPrice: number;
+  costPrice: number;
+  taxRate: number;
+};
 
 /** Profit margin as a ratio (0..1). Guards against divide-by-zero. */
 export function marginRatio(salePrice: number, purchasePrice: number): number {
@@ -48,7 +49,7 @@ export interface InvoiceTotals {
  * This is the single source of truth used at write time so that
  * stored aggregate columns stay consistent.
  */
-export function invoiceTotals(items: InvoiceItem[]): InvoiceTotals {
+export function invoiceTotals(items: PricedLine[]): InvoiceTotals {
   let subtotal = 0;
   let taxTotal = 0;
   let costTotal = 0;

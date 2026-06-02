@@ -1,0 +1,31 @@
+{
+  "name": "@cash-pro/api",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@cash-pro/core": "workspace:*",
+    "@cash-pro/db": "workspace:*",
+    "@clerk/backend": "^1.21.6",
+    "@hono/clerk-auth": "^2.0.0",
+    "@hono/node-server": "^1.13.7",
+    "@hono/zod-validator": "^0.4.1",
+    "drizzle-orm": "^0.36.4",
+    "hono": "^4.6.13",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@cash-pro/config": "workspace:*",
+    "@types/node": "^20.16.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
