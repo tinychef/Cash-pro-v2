@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { bodyLimit } from "hono/body-limit";
+import { HTTPException } from "hono/http-exception";
 import { clerkMiddleware } from "@hono/clerk-auth";
 import {
   customerInputSchema,
@@ -30,14 +31,25 @@ export function createApp() {
 
   const isProd = process.env.NODE_ENV === "production";
 
+  // Strict CORS: explicit allowlist from WEB_ORIGIN. In production we never
+  // fall back to "*"; only dev does, for convenience.
+  const origins = process.env.WEB_ORIGIN?.split(",").map((o) => o.trim()).filter(Boolean);
+  if (isProd && (!origins || origins.length === 0)) {
+    // eslint-disable-next-line no-console
+    console.warn("WEB_ORIGIN is not set in production — cross-origin requests are blocked.");
+  }
+  const corsOrigin = origins && origins.length ? origins : isProd ? [] : "*";
+
   app.use("*", secureHeaders());
-  app.use("*", cors({ origin: process.env.WEB_ORIGIN?.split(",") ?? "*" }));
+  app.use("*", cors({ origin: corsOrigin }));
   // Cap request bodies (defense against memory-exhaustion payloads).
   app.use("*", bodyLimit({ maxSize: 1024 * 1024 }));
   // Basic abuse protection (per-instance, IP-keyed).
   app.use("*", rateLimit({ windowMs: 60_000, max: 300 }));
 
   app.onError((err, c) => {
+    // Respect intentional HTTP errors (e.g. 409 stock guard, 403 authz).
+    if (err instanceof HTTPException) return err.getResponse();
     // eslint-disable-next-line no-console
     console.error(err);
     // Don't leak internal error details to clients in production.

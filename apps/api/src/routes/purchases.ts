@@ -24,6 +24,7 @@ import {
 } from "@cash-pro/db";
 import type { AppEnv } from "../context.js";
 import { serialize, serializeList } from "../lib/serialize.js";
+import { withUniqueRetry } from "../lib/retry.js";
 
 export const purchasesRouter = new Hono<AppEnv>();
 
@@ -59,7 +60,8 @@ purchasesRouter.post("/", zValidator("json", purchaseInputSchema), async (c) => 
   const input = c.req.valid("json");
   const total = purchaseTotal(input.items);
 
-  const created = await db.transaction(async (tx) => {
+  const created = await withUniqueRetry(() =>
+    db.transaction(async (tx) => {
     const countRows = await tx
       .select({ value: count() })
       .from(purchaseOrders)
@@ -121,7 +123,8 @@ purchasesRouter.post("/", zValidator("json", purchaseInputSchema), async (c) => 
     });
 
     return po!;
-  });
+    }),
+  );
 
   return c.json(serialize("purchase_orders", created), 201);
 });

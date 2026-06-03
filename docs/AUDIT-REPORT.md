@@ -20,14 +20,15 @@ ya estaba correctamente desactivado cuando Clerk está configurado).
 | 5 | **Aislamiento multi-tenant** | — | OK | Todas las consultas filtran `companyId` (`lib/crud.ts`, rutas custom). Confirmado. |
 | 6 | **Bypass de auth en prod** | — | OK | Con `CLERK_SECRET_KEY`, `tenant.ts` ignora `x-company-id`; `/dev/bootstrap` responde 403. |
 | 7 | **Mass assignment** | — | OK | Zod (objetos planos) descarta claves desconocidas; `companyId/createdBy` se fijan tras el spread. |
-| 8 | **CORS `*` por defecto** | Media | **P** | Restringir a `WEB_ORIGIN` y fallar si no está en producción. |
-| 9 | **Numeración de documentos sin reintento concurrente** | Media | **P** | Migrar a secuencia por empresa o reintento ante colisión del índice único. |
-| 10 | **Stock negativo permitido en ventas** | Media | **P** | Validar saldo de inventario (bloquear o backorder configurable). |
+| 8 | **CORS `*` por defecto** | Media | **R** | `app.ts`: allowlist desde `WEB_ORIGIN`; en producción nunca cae a `*` (bloquea y avisa si falta). |
+| 9 | **Numeración de documentos sin reintento concurrente** | Media | **R** | `lib/retry.ts` `withUniqueRetry` envuelve la transacción de factura y compra; reintenta ante violación de índice único (23505). |
+| 10 | **Stock negativo permitido en ventas** | Media | **R** | `routes/invoices.ts`: guarda de inventario (409 si insuficiente) salvo `settings.allowNegativeStock`. |
 | 11 | **Sin RLS en PostgreSQL** (solo capa app) | Media | **P** | Evaluar políticas RLS por `company_id` como defensa en profundidad. |
-| 12 | **Sin tests de API/integración** | Media | **P** | Añadir suite de integración (CRUD + aislamiento de tenant) y e2e web. |
+| 12 | **Sin tests de API/integración** | Media | **R** | `apps/api/src/app.test.ts`: 5 tests (health, CRUD, **aislamiento de tenant**, guarda de stock 409, descuento de stock); gated por `DATABASE_URL`. |
 | 13 | **Sin paginación en listados/reportes** | Baja→Media | **P** | Paginación keyset por `companyId + createdAt`. |
-| 14 | **CI sin lint ni prueba de migración** | Baja | **P** | Añadir lint + `drizzle-kit migrate` contra Postgres efímero en CI. |
+| 14 | **CI sin lint ni prueba de migración** | Baja | **P** | Añadir lint + servicio Postgres + `drizzle-kit migrate` + tests de integración en CI. |
 | 15 | **Dependencias** | Baja | **P** | Ejecutar `pnpm audit --prod` periódicamente. |
+| 16 | **Factura sin cliente rechazada (walk-in)** | Media | **R** | `invoiceInputSchema`: `clientId` opcional → permite ventas de mostrador. |
 
 ## Verificación de esta ronda
 - `pnpm turbo typecheck test build` → **verde** (7/7).

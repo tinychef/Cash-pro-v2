@@ -5,17 +5,19 @@
 // transactions_log entry, atomically.
 // ============================================================
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   deriveInvoiceStatus,
   invoiceInputSchema,
   invoiceTotals,
   nextInvoiceNumber,
 } from "@cash-pro/core";
-import { inventoryMovements, invoiceItems, invoices, products, transactionsLog } from "@cash-pro/db";
+import { companies, inventoryMovements, invoiceItems, invoices, products, transactionsLog } from "@cash-pro/db";
 import type { AppEnv } from "../context.js";
 import { serialize, serializeList } from "../lib/serialize.js";
+import { withUniqueRetry } from "../lib/retry.js";
 
 export const invoicesRouter = new Hono<AppEnv>();
 
@@ -54,7 +56,37 @@ invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
   const today = new Date().toISOString().slice(0, 10);
   const status = deriveInvoiceStatus(totals.total, 0, input.dueDate, today);
 
-  const created = await db.transaction(async (tx) => {
+  // Stock guard: block sales that would drive inventory negative, unless
+  // the company opted into backorders (settings.allowNegativeStock).
+  const [company] = await db.select().from(companies).where(eq(companies.id, companyId)).limit(1);
+  const allowNegative = Boolean(
+    (company?.settings as Record<string, unknown> | undefined)?.allowNegativeStock,
+  );
+  if (!allowNegative) {
+    const ids = input.items.map((i) => i.productId).filter((x): x is string => Boolean(x));
+    if (ids.length) {
+      const stockRows = await db
+        .select({ id: products.id, name: products.name, stock: products.stock })
+        .from(products)
+        .where(and(eq(products.companyId, companyId), inArray(products.id, ids)));
+      const stockById = new Map(stockRows.map((r) => [r.id, r]));
+      const needed = new Map<string, number>();
+      for (const it of input.items) {
+        if (it.productId) needed.set(it.productId, (needed.get(it.productId) ?? 0) + it.quantity);
+      }
+      for (const [pid, qty] of needed) {
+        const row = stockById.get(pid);
+        if (row && row.stock < Math.round(qty)) {
+          throw new HTTPException(409, {
+            message: `Stock insuficiente para "${row.name}" (disponible ${row.stock}, requerido ${Math.round(qty)})`,
+          });
+        }
+      }
+    }
+  }
+
+  const created = await withUniqueRetry(() =>
+    db.transaction(async (tx) => {
     const countRows = await tx
       .select({ value: count() })
       .from(invoices)
@@ -125,7 +157,8 @@ invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
     });
 
     return invoice!;
-  });
+    }),
+  );
 
   return c.json(serialize("invoices", created), 201);
 });

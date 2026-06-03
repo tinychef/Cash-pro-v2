@@ -43,8 +43,9 @@ export const invoiceItemInputSchema = z.object({
 });
 
 export const invoiceInputSchema = z.object({
-  clientId: z.string().min(1, "Cliente requerido"),
-  clientName: z.string().min(1),
+  // Optional: walk-in sales may have no registered customer.
+  clientId: z.string().default(""),
+  clientName: z.string().min(1).default("Sin cliente"),
   items: z.array(invoiceItemInputSchema).min(1, "Agrega al menos un producto"),
   dueDate: z.string(),
   notes: z.string().default(""),
