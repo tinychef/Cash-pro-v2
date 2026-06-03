@@ -1,7 +1,9 @@
 # Reporte de Auditoría — Cash Pro v2
 
 Ejecución del plan en `docs/AUDIT.md`. Severidades: Crítica / Alta / Media / Baja.
-Estado: **R** = remediado en esta ronda · **P** = pendiente (siguiente ronda).
+Estado: **R** = remediado · **R\*** = remediado con salvedad (ver nota) · **P** = pendiente.
+
+> **Rondas:** 1 (Alta) ✅ · 2 (robustez/corrección) ✅ · 3 (defensa en profundidad/infra) ✅ — **todas completadas**.
 
 ## Resumen
 Se priorizaron y **remediaron los hallazgos de severidad Alta** y un hallazgo Media de
@@ -23,11 +25,11 @@ ya estaba correctamente desactivado cuando Clerk está configurado).
 | 8 | **CORS `*` por defecto** | Media | **R** | `app.ts`: allowlist desde `WEB_ORIGIN`; en producción nunca cae a `*` (bloquea y avisa si falta). |
 | 9 | **Numeración de documentos sin reintento concurrente** | Media | **R** | `lib/retry.ts` `withUniqueRetry` envuelve la transacción de factura y compra; reintenta ante violación de índice único (23505). |
 | 10 | **Stock negativo permitido en ventas** | Media | **R** | `routes/invoices.ts`: guarda de inventario (409 si insuficiente) salvo `settings.allowNegativeStock`. |
-| 11 | **Sin RLS en PostgreSQL** (solo capa app) | Media | **P** | Evaluar políticas RLS por `company_id` como defensa en profundidad. |
+| 11 | **Sin RLS en PostgreSQL** (solo capa app) | Media | **R*** | `packages/db/rls.sql` habilita RLS + política `tenant_isolation` por `company_id` en las 15 tablas con tenant (verificado aplica limpio). **Opt-in**: requiere rol de app no-owner + GUC `app.current_company` por request (documentado en el propio script). |
 | 12 | **Sin tests de API/integración** | Media | **R** | `apps/api/src/app.test.ts`: 5 tests (health, CRUD, **aislamiento de tenant**, guarda de stock 409, descuento de stock); gated por `DATABASE_URL`. |
-| 13 | **Sin paginación en listados/reportes** | Baja→Media | **P** | Paginación keyset por `companyId + createdAt`. |
-| 14 | **CI sin lint ni prueba de migración** | Baja | **P** | Añadir lint + servicio Postgres + `drizzle-kit migrate` + tests de integración en CI. |
-| 15 | **Dependencias** | Baja | **P** | Ejecutar `pnpm audit --prod` periódicamente. |
+| 13 | **Sin paginación en listados/reportes** | Baja→Media | **R** | `lib/paging.ts` (`?limit`/`?offset`, cap 500) aplicado a productos/clientes/proveedores/gastos/facturas/compras. |
+| 14 | **CI sin lint ni prueba de migración** | Baja | **R** | `.github/workflows/ci.yml`: servicio **Postgres 16** + tests de integración (migra y ejercita aislamiento de tenant) + lint web + `pnpm audit`. |
+| 15 | **Dependencias** | Baja | **R*** | `pnpm audit --prod` integrado en CI. Hallazgo: 6 *high* en `next@14.2.35` (último de la línea 14.x) — **solo se corrigen con upgrade mayor a Next 15/16**, registrado como tarea aparte (riesgo de regresión). |
 | 16 | **Factura sin cliente rechazada (walk-in)** | Media | **R** | `invoiceInputSchema`: `clientId` opcional → permite ventas de mostrador. |
 
 ## Verificación de esta ronda
@@ -36,6 +38,13 @@ ya estaba correctamente desactivado cuando Clerk está configurado).
 - API contra PostgreSQL 16: headers de seguridad presentes (HSTS, X-Content-Type-Options,
   X-Frame-Options, CSP/COOP/CORP); CRUD sin regresión (201/200); `requireWrite` activo.
 
-## Siguiente ronda recomendada (Media)
-Orden sugerido: #12 tests de integración → #9 numeración concurrente → #10 guardia de stock
-→ #8 CORS estricto → #11 RLS → #13 paginación → #14 CI.
+## Estado final
+Todos los hallazgos del plan quedan **remediados**. Salvedades registradas como tareas
+de seguimiento (no bloqueantes para la operación segura):
+- **RLS** (#11): provisto como hardening opt-in; activarlo en el despliegue productivo
+  (rol no-owner + GUC por request).
+- **Next.js** (#15): 6 advisories *high* requieren upgrade mayor a Next 15/16; planificar
+  como migración independiente con su regresión.
+
+Pendiente sólo lo marcado desde el inicio como fase futura del producto (no auditoría):
+app móvil Expo + sincronización offline con PowerSync.

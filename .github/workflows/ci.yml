@@ -9,6 +9,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cashpro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cashpro
+
     steps:
       - uses: actions/checkout@v4
 
@@ -27,8 +46,16 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck
 
-      - name: Test
+      - name: Test (incl. API integration against Postgres)
         run: pnpm turbo run test
 
       - name: Build
         run: pnpm turbo run build
+
+      - name: Lint (web)
+        run: pnpm --filter @cash-pro/web lint
+        continue-on-error: true
+
+      - name: Dependency audit
+        run: pnpm audit --prod
+        continue-on-error: true

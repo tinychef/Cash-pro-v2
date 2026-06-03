@@ -18,17 +18,21 @@ import { companies, inventoryMovements, invoiceItems, invoices, products, transa
 import type { AppEnv } from "../context.js";
 import { serialize, serializeList } from "../lib/serialize.js";
 import { withUniqueRetry } from "../lib/retry.js";
+import { parsePaging } from "../lib/paging.js";
 
 export const invoicesRouter = new Hono<AppEnv>();
 
 invoicesRouter.get("/", async (c) => {
   const db = c.get("db");
   const companyId = c.get("companyId");
+  const { limit, offset } = parsePaging(c);
   const rows = await db
     .select()
     .from(invoices)
     .where(and(eq(invoices.companyId, companyId), isNull(invoices.deletedAt)))
-    .orderBy(desc(invoices.createdAt));
+    .orderBy(desc(invoices.createdAt))
+    .limit(limit)
+    .offset(offset);
   return c.json(serializeList("invoices", rows));
 });
 

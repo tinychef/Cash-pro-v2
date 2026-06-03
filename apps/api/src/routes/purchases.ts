@@ -25,17 +25,21 @@ import {
 import type { AppEnv } from "../context.js";
 import { serialize, serializeList } from "../lib/serialize.js";
 import { withUniqueRetry } from "../lib/retry.js";
+import { parsePaging } from "../lib/paging.js";
 
 export const purchasesRouter = new Hono<AppEnv>();
 
 purchasesRouter.get("/", async (c) => {
   const db = c.get("db");
   const companyId = c.get("companyId");
+  const { limit, offset } = parsePaging(c);
   const rows = await db
     .select()
     .from(purchaseOrders)
     .where(and(eq(purchaseOrders.companyId, companyId), isNull(purchaseOrders.deletedAt)))
-    .orderBy(desc(purchaseOrders.createdAt));
+    .orderBy(desc(purchaseOrders.createdAt))
+    .limit(limit)
+    .offset(offset);
   return c.json(serializeList("purchase_orders", rows));
 });
 

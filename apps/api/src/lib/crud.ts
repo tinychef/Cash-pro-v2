@@ -10,6 +10,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import type { ZodTypeAny } from "zod";
 import type { AppEnv } from "../context.js";
 import { serialize, serializeList, type NumericResource } from "./serialize.js";
+import { parsePaging } from "./paging.js";
 
 // Tables share these columns; we access them dynamically so one factory
 // serves many tables. Typed loosely on purpose.
@@ -20,11 +21,14 @@ export function crudRouter(table: any, schema: ZodTypeAny, resource: NumericReso
   router.get("/", async (c) => {
     const db = c.get("db");
     const companyId = c.get("companyId");
+    const { limit, offset } = parsePaging(c);
     const rows = await db
       .select()
       .from(table)
       .where(and(eq(table.companyId, companyId), isNull(table.deletedAt)))
-      .orderBy(desc(table.createdAt));
+      .orderBy(desc(table.createdAt))
+      .limit(limit)
+      .offset(offset);
     return c.json(serializeList(resource, rows));
   });
 
