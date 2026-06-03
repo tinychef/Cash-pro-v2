@@ -10,6 +10,8 @@ const nextConfig = {
   // Trace files from the monorepo root so workspace deps are included.
   outputFileTracingRoot: path.join(__dirname, "../../"),
   transpilePackages: ["@cash-pro/core"],
+  // Lint is enforced separately (CI); don't fail production builds on it.
+  eslint: { ignoreDuringBuilds: true },
 };
 
 export default nextConfig;

@@ -25,7 +25,7 @@ import { UserButton } from "@clerk/nextjs";
 
 function AccountButton() {
     if (!clerkEnabled) return null;
-    return <UserButton afterSignOutUrl="/sign-in" />;
+    return <UserButton />;
 }
 
 // Primary destinations appear in the mobile bottom bar and the sidebar.

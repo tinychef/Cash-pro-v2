@@ -29,7 +29,7 @@ ya estaba correctamente desactivado cuando Clerk está configurado).
 | 12 | **Sin tests de API/integración** | Media | **R** | `apps/api/src/app.test.ts`: 5 tests (health, CRUD, **aislamiento de tenant**, guarda de stock 409, descuento de stock); gated por `DATABASE_URL`. |
 | 13 | **Sin paginación en listados/reportes** | Baja→Media | **R** | `lib/paging.ts` (`?limit`/`?offset`, cap 500) aplicado a productos/clientes/proveedores/gastos/facturas/compras. |
 | 14 | **CI sin lint ni prueba de migración** | Baja | **R** | `.github/workflows/ci.yml`: servicio **Postgres 16** + tests de integración (migra y ejercita aislamiento de tenant) + lint web + `pnpm audit`. |
-| 15 | **Dependencias** | Baja | **R*** | `pnpm audit --prod` integrado en CI. Hallazgo: 6 *high* en `next@14.2.35` (último de la línea 14.x) — **solo se corrigen con upgrade mayor a Next 15/16**, registrado como tarea aparte (riesgo de regresión). |
+| 15 | **Dependencias** | Baja | **R** | `pnpm audit --prod` integrado en CI. Resuelto: **Next 14→16 + React 19**, **drizzle-orm 0.36→0.45.2** (fix SQLi GHSA-gpj5-g38j-94v9) y override `postcss>=8.5.10`. Resultado: **0 vulnerabilidades** (antes 16, 6 *high*). |
 | 16 | **Factura sin cliente rechazada (walk-in)** | Media | **R** | `invoiceInputSchema`: `clientId` opcional → permite ventas de mostrador. |
 
 ## Verificación de esta ronda
@@ -39,12 +39,12 @@ ya estaba correctamente desactivado cuando Clerk está configurado).
   X-Frame-Options, CSP/COOP/CORP); CRUD sin regresión (201/200); `requireWrite` activo.
 
 ## Estado final
-Todos los hallazgos del plan quedan **remediados**. Salvedades registradas como tareas
-de seguimiento (no bloqueantes para la operación segura):
+Todos los hallazgos del plan quedan **remediados**. `pnpm audit --prod` → **0 vulnerabilidades**.
+Stack actualizado a **Next 16 + React 19 + Drizzle 0.45**.
+
+Salvedad única (no bloqueante):
 - **RLS** (#11): provisto como hardening opt-in; activarlo en el despliegue productivo
   (rol no-owner + GUC por request).
-- **Next.js** (#15): 6 advisories *high* requieren upgrade mayor a Next 15/16; planificar
-  como migración independiente con su regresión.
 
 Pendiente sólo lo marcado desde el inicio como fase futura del producto (no auditoría):
 app móvil Expo + sincronización offline con PowerSync.

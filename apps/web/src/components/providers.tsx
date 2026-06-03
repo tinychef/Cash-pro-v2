@@ -28,5 +28,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   // Wrap with Clerk only when configured; dev mode renders without it.
-  return clerkEnabled ? <ClerkProvider>{tree}</ClerkProvider> : tree;
+  return clerkEnabled ? (
+    <ClerkProvider afterSignOutUrl="/sign-in">{tree}</ClerkProvider>
+  ) : (
+    tree
+  );
 }

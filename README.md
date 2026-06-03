@@ -1,6 +1,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Turborepo-monorepo-EF4444?style=for-the-badge&logo=turborepo" />
-  <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js" />
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" />
   <img src="https://img.shields.io/badge/Hono-4-E36002?style=for-the-badge&logo=hono" />
   <img src="https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=for-the-badge" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql" />
@@ -48,8 +48,8 @@ storage S3-compatible (R2), un solo paquete de lógica para web/mobile/api, Dock
 ## 🛠️ Stack
 
 ```
-Web        Next.js 14 · TypeScript · Tailwind · shadcn/ui · TanStack Query · Recharts · @react-pdf/renderer
-API        Hono 4 · Drizzle ORM · Clerk · Zod
+Web        Next.js 16 · React 19 · TypeScript · Tailwind · shadcn/ui · TanStack Query · Recharts · @react-pdf/renderer
+API        Hono 4 · Drizzle ORM 0.45 · Clerk · Zod
 DB         PostgreSQL 16 (sin features propietarias)
 Tooling    Turborepo · pnpm · Vitest · GitHub Actions CI
 ```
