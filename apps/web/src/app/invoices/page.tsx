@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { currency, shortDate, invoiceBalance, type InvoiceStatus, type PaymentMethod } from "@cash-pro/core";
-import { useInvoices, usePayments, useCreatePayment } from "@/lib/queries";
+import { useInvoices, usePayments, useCreatePayment, useCustomers } from "@/lib/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, FileText, CreditCard, Download, Link2 } from "lucide-react";
+import { Search, Plus, FileText, CreditCard, Download, Link2, Mail, BellRing } from "lucide-react";
 import { api } from "@/lib/api";
 import { LoadingState, ErrorState, EmptyState } from "@/components/states";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ type StatusFilter = "all" | InvoiceStatus;
 export default function InvoicesPage() {
   const { data: invoices = [], isLoading, error } = useInvoices();
   const { data: payments = [] } = usePayments();
+  const { data: customers = [] } = useCustomers();
   const createPayment = useCreatePayment();
 
   const [search, setSearch] = useState("");
@@ -43,6 +44,11 @@ export default function InvoicesPage() {
   const [payAmount, setPayAmount] = useState(0);
   const [payMethod, setPayMethod] = useState<PaymentMethod>("cash");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [mailDialogOpen, setMailDialogOpen] = useState(false);
+  const [mailInvoiceId, setMailInvoiceId] = useState<string | null>(null);
+  const [mailTo, setMailTo] = useState("");
+  const [mailSending, setMailSending] = useState(false);
+  const [reminding, setReminding] = useState(false);
 
   const filtered = invoices
     .filter((inv) => {
@@ -91,6 +97,40 @@ export default function InvoicesPage() {
     }
   };
 
+  const openMailDialog = (invoiceId: string) => {
+    const inv = invoices.find((i) => i.id === invoiceId);
+    const client = customers.find((c) => c.id === inv?.clientId);
+    setMailInvoiceId(invoiceId);
+    setMailTo(client?.email ?? "");
+    setMailDialogOpen(true);
+  };
+
+  const handleSendMail = async () => {
+    if (!mailInvoiceId || !mailTo) return;
+    setMailSending(true);
+    try {
+      await api.post(`/invoices/${mailInvoiceId}/send`, { to: mailTo });
+      toast.success(`Factura enviada a ${mailTo}`);
+      setMailDialogOpen(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setMailSending(false);
+    }
+  };
+
+  const handleRemindOverdue = async () => {
+    setReminding(true);
+    try {
+      const r = await api.post<{ sent: number; eligible: number }>("/invoices/remind-overdue", {});
+      toast.success(`Recordatorios enviados: ${r.sent} de ${r.eligible}`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setReminding(false);
+    }
+  };
+
   const handleDownload = async (id: string) => {
     setDownloadingId(id);
     try {
@@ -131,7 +171,7 @@ export default function InvoicesPage() {
         <Input placeholder="Buscar por número o cliente..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 rounded-xl border-0 bg-secondary" />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar items-center">
         {filters.map((f) => (
           <button
             key={f.key}
@@ -143,6 +183,11 @@ export default function InvoicesPage() {
             {f.label}
           </button>
         ))}
+        {statusFilter === "overdue" && filtered.length > 0 && (
+          <Button variant="outline" size="sm" className="rounded-full text-xs gap-1.5 ml-auto shrink-0" disabled={reminding} onClick={handleRemindOverdue}>
+            <BellRing className="h-3.5 w-3.5" /> {reminding ? "Enviando…" : "Enviar recordatorios"}
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -190,6 +235,9 @@ export default function InvoicesPage() {
                     <Button variant="outline" size="sm" className="gap-2 rounded-xl text-xs" onClick={() => handleShare(inv.id)} aria-label="Copiar link público">
                       <Link2 className="h-3.5 w-3.5" />
                     </Button>
+                    <Button variant="outline" size="sm" className="gap-2 rounded-xl text-xs" onClick={() => openMailDialog(inv.id)} aria-label="Enviar por email">
+                      <Mail className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -224,6 +272,26 @@ export default function InvoicesPage() {
             </div>
             <Button onClick={handlePay} disabled={createPayment.isPending} className="w-full rounded-xl">
               {createPayment.isPending ? "Procesando…" : "Confirmar Pago"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={mailDialogOpen} onOpenChange={setMailDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Enviar factura por email</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div>
+              <Label className="text-xs">Email del destinatario</Label>
+              <Input type="email" value={mailTo} onChange={(e) => setMailTo(e.target.value)} placeholder="cliente@correo.com" />
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Recibirá un link para ver la factura y descargar el PDF, con tu logo y colores.
+              </p>
+            </div>
+            <Button onClick={handleSendMail} disabled={mailSending || !mailTo} className="w-full rounded-xl gap-2">
+              <Mail className="h-4 w-4" /> {mailSending ? "Enviando…" : "Enviar"}
             </Button>
           </div>
         </DialogContent>

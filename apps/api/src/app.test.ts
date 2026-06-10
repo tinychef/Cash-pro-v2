@@ -153,6 +153,17 @@ dbDescribe("API integration (Postgres)", () => {
     expect(bad.status).toBe(404);
   });
 
+  it("email endpoints respond 503 until RESEND_API_KEY is configured", async () => {
+    delete process.env.RESEND_API_KEY;
+    const send = await app.request(
+      "/api/invoices/00000000-0000-0000-0000-000000000000/send",
+      json(companyA, { to: "x@y.com" }, "POST"),
+    );
+    expect(send.status).toBe(503);
+    const remind = await app.request("/api/invoices/remind-overdue", json(companyA, {}, "POST"));
+    expect(remind.status).toBe(503);
+  });
+
   it("persists invoice branding in settings", async () => {
     const logo = `data:image/png;base64,${Buffer.from("fake-png").toString("base64")}`;
     const put = await app.request(

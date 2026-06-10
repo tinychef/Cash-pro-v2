@@ -68,10 +68,10 @@ Sin esto, nada más importa. Requiere cuentas/keys (las eliges tú).
 - [ ] **Almacenamiento de archivos (R2 S3-compatible)** → subir logo de empresa.
 - [x] **Marca en factura/PDF**: logo, color de acento, datos fiscales, nota al pie. *(logo inline; migra a R2 con keys)*
 - [x] **Link público de factura** (token firmado HMAC) — ver/descargar sin login, payload sin costos/utilidad.
-- [ ] **Envío por email** (Resend o Postmark) del PDF + link, detrás de env vars.
+- [x] **Envío por email** (Resend HTTP, sin SDK) del link público con marca — se enciende con `RESEND_API_KEY`.
 - [x] **Cotizaciones/Presupuestos**: módulo completo + **convertir a factura** atómico.
 - [ ] **Link de pago online (Stripe Checkout)** + webhook → marca la factura como pagada.
-- [ ] **Recordatorios de vencimiento** (email automático a facturas overdue).
+- [x] **Recordatorios de vencimiento** (`POST /invoices/remind-overdue` + botón en filtro Vencidas).
 - [x] **Descuento a nivel de línea** (aplicado antes del impuesto) · [ ] impuesto por línea editable en UI · [ ] moneda por factura.
 - **Hecho cuando:** puedo crear una cotización, convertirla, enviarla por email con mi logo,
   y el cliente paga online y la factura se concilia sola.
