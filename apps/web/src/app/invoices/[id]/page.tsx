@@ -107,13 +107,14 @@ export default function InvoiceDetailPage() {
             <div key={it.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
               <div>
                 <p className="text-sm font-medium">{it.productName}</p>
-                <p className="text-xs text-muted-foreground">{currency(it.unitPrice)} × {it.quantity}</p>
+                <p className="text-xs text-muted-foreground">{currency(it.unitPrice)} × {it.quantity}{(it.discountRate ?? 0) > 0 ? ` · −${Math.round((it.discountRate ?? 0) * 100)}%` : ""}</p>
               </div>
-              <span className="text-sm font-semibold">{currency(it.unitPrice * it.quantity)}</span>
+              <span className="text-sm font-semibold">{currency(it.unitPrice * it.quantity * (1 - (it.discountRate ?? 0)))}</span>
             </div>
           ))}
           <div className="pt-3 space-y-1">
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span>{currency(invoice.subtotal)}</span></div>
+            {(invoice.discountTotal ?? 0) > 0 && (<div className="flex justify-between text-sm"><span className="text-muted-foreground">Descuento</span><span className="text-emerald-600">−{currency(invoice.discountTotal ?? 0)}</span></div>)}
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Impuesto</span><span>{currency(invoice.taxTotal)}</span></div>
             <div className="flex justify-between text-base font-bold pt-1 border-t border-border"><span>Total</span><span className="text-primary">{currency(invoice.total)}</span></div>
             <div className="flex justify-between text-xs pt-2"><span className="text-muted-foreground">Margen</span><span className="font-semibold text-blue-500">{pct(margin)}</span></div>

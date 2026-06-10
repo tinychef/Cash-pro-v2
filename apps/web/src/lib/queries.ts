@@ -18,6 +18,8 @@ import type {
   ProfitAndLoss,
   Product,
   PurchaseOrder,
+  Quote,
+  QuoteStatus,
   Supplier,
   SupplierPayment,
 } from "@cash-pro/core";
@@ -30,6 +32,8 @@ export const keys = {
   expenses: ["expenses"] as const,
   invoices: ["invoices"] as const,
   invoice: (id: string) => ["invoices", id] as const,
+  quotes: ["quotes"] as const,
+  quote: (id: string) => ["quotes", id] as const,
   payments: ["payments"] as const,
   purchases: ["purchases"] as const,
   purchase: (id: string) => ["purchases", id] as const,
@@ -44,12 +48,26 @@ export interface CompanySettings {
   currency: string;
   locale: string;
   defaultTaxRate: number;
+  // ---- Invoice branding ----
+  taxId: string;
+  address: string;
+  phone: string;
+  email: string;
+  accentColor: string;
+  footerNote: string;
+  /** Small inline logo (data URL). Swaps to R2-hosted URL later. */
+  logoDataUrl: string;
 }
 
 // ---- Invoice shape from API (customer* naming) -> UI (client* naming) ----
 type ApiInvoice = Invoice & { customerId: string | null; customerName: string };
 function normalizeInvoice(i: ApiInvoice): Invoice {
   return { ...i, clientId: i.customerId ?? "", clientName: i.customerName };
+}
+
+type ApiQuote = Quote & { customerId: string | null; customerName: string };
+function normalizeQuote(q: ApiQuote): Quote {
+  return { ...q, clientId: q.customerId ?? "", clientName: q.customerName };
 }
 
 // ---------------- Queries ----------------
@@ -206,6 +224,47 @@ export function useCreatePayment() {
       api.post<Payment>("/payments", b),
     { invalidate: [keys.invoices, keys.payments, ...moneyKeys], success: "Pago registrado" },
   );
+}
+
+// ---------------- Quotes / estimates ----------------
+export interface NewQuotePayload {
+  clientId: string;
+  clientName: string;
+  items: Quote["items"];
+  validUntil: string;
+  notes: string;
+}
+export function useQuotes() {
+  return useQuery({
+    queryKey: keys.quotes,
+    queryFn: async () => (await api.get<ApiQuote[]>("/quotes")).map(normalizeQuote),
+  });
+}
+export function useQuote(id: string | undefined) {
+  return useQuery({
+    queryKey: keys.quote(id ?? ""),
+    enabled: Boolean(id),
+    queryFn: async () => normalizeQuote(await api.get<ApiQuote>(`/quotes/${id}`)),
+  });
+}
+export function useCreateQuote() {
+  return useApiMutation((b: NewQuotePayload) => api.post<Quote>("/quotes", b), {
+    invalidate: [keys.quotes],
+    success: "Cotización creada",
+  });
+}
+export function useUpdateQuoteStatus() {
+  return useApiMutation(
+    ({ id, status }: { id: string; status: Exclude<QuoteStatus, "converted"> }) =>
+      api.patch<Quote>(`/quotes/${id}/status`, { status }),
+    { invalidate: [keys.quotes], success: "Estado actualizado" },
+  );
+}
+export function useConvertQuote() {
+  return useApiMutation((id: string) => api.post<Invoice>(`/quotes/${id}/convert`, {}), {
+    invalidate: [keys.quotes, keys.invoices, keys.products, ...moneyKeys],
+    success: "Cotización convertida en factura",
+  });
 }
 
 // ---------------- Purchases & payables ----------------

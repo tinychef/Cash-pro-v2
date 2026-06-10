@@ -18,12 +18,14 @@
 |--------|-------------|
 | 📊 **Dashboard** | KPIs en tiempo real: ventas del día, utilidad, cuentas por cobrar, flujo de caja neto + gráfico ingresos vs gastos. |
 | ⚡ **Facturación rápida** | Factura en <30s con búsqueda de productos y **margen/utilidad en vivo**. Descuenta inventario automáticamente. |
+| 🧮 **Cotizaciones** | Crea presupuestos sin tocar inventario y **conviértelos en factura con un clic** (asigna número, descuenta stock y registra el movimiento de forma atómica). |
 | 📦 **Productos** | Precio de **compra vs venta** separados; margen y ganancia/unidad calculados en la base de datos (columnas GENERATED). Alertas de stock bajo. |
 | 👥 **Clientes / Proveedores** | CRUD completo; balance de cuentas por cobrar por cliente. |
 | 💳 **Pagos** | Estados automáticos (pendiente → parcial → pagada → vencida) al registrar pagos. |
 | 💸 **Gastos** | Registro por categoría que alimenta el P&L y el flujo de caja. |
 | 📈 **Reportes** | Estado de resultados (P&L), flujo de efectivo acumulado y márgenes, por rango de fechas. |
-| 🧾 **PDF** | Generación de facturas en PDF en el navegador (offline-capable). |
+| 🧾 **PDF con tu marca** | Logo, color, datos fiscales y nota al pie en el PDF generado en el navegador (offline-capable). |
+| 🔗 **Link público** | Comparte la factura con un link firmado: tu cliente la ve y descarga el PDF **sin iniciar sesión**. |
 | ⚙️ **Configuración** | Nombre de empresa, moneda e impuesto por defecto. |
 
 ## 🏗️ Arquitectura (monorepo Turborepo + pnpm)
@@ -57,8 +59,19 @@ Tooling    Turborepo · pnpm · Vitest · GitHub Actions CI
 ## 🚀 Desarrollo local
 
 ```bash
+# ⚡ Un solo comando: levanta Postgres, migra y arranca API + Web
 pnpm install
+pnpm dev:up        # → http://localhost:3000
+```
 
+`pnpm dev:up` (script `scripts/dev-up.sh`) crea `.env` desde `.env.example`, reutiliza
+un Postgres si ya hay uno o arranca un contenedor `postgres:16`, aplica migraciones y
+lanza API + Web juntos. Sin Clerk, la web crea sola una empresa demo con datos de ejemplo.
+
+<details>
+<summary>Alternativas (Docker completo / pasos manuales)</summary>
+
+```bash
 # Opción A — todo con Docker (postgres + api + web)
 docker compose -f docker/docker-compose.yml up
 
@@ -70,6 +83,7 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/cashpro pnpm --filter @
 #  3) Web
 pnpm --filter @cash-pro/web dev   # http://localhost:3000
 ```
+</details>
 
 > En modo dev (sin `CLERK_SECRET_KEY`), la web crea automáticamente una empresa demo con datos
 > de ejemplo vía `POST /dev/bootstrap`. Con Clerk configurado, la Organización resuelve la empresa.

@@ -75,6 +75,8 @@ export interface InvoiceItem {
   unitPrice: number;
   costPrice: number;
   taxRate: number;
+  /** Per-line discount as a ratio 0..1 (0.10 = 10% off). */
+  discountRate?: number;
 }
 
 export interface Invoice extends Partial<SyncMeta> {
@@ -84,6 +86,8 @@ export interface Invoice extends Partial<SyncMeta> {
   clientName: string;
   items: InvoiceItem[];
   subtotal: number;
+  /** Sum of per-line discounts (subtotal is already net of it). */
+  discountTotal?: number;
   taxTotal: number;
   total: number;
   /** Cost of goods sold for this invoice. */
@@ -100,6 +104,32 @@ export interface Payment extends Partial<SyncMeta> {
   amount: number;
   method: PaymentMethod;
   date: string;
+  notes: string;
+}
+
+export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired" | "converted";
+
+/** A quote/estimate line — same shape as an invoice line. */
+export type QuoteItem = InvoiceItem;
+
+export interface Quote extends Partial<SyncMeta> {
+  id: string;
+  number: string;
+  clientId: string;
+  clientName: string;
+  items: QuoteItem[];
+  subtotal: number;
+  /** Sum of per-line discounts (subtotal is already net of it). */
+  discountTotal?: number;
+  taxTotal: number;
+  total: number;
+  costTotal: number;
+  status: QuoteStatus;
+  /** Date until which the quote is valid (ISO). */
+  validUntil: string;
+  /** Set once converted; references the resulting invoice. */
+  convertedInvoiceId?: string | null;
+  createdAt: string;
   notes: string;
 }
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
     FileText,
+    FileCheck,
     Package,
     Users,
     BarChart3,
@@ -40,6 +41,7 @@ const primaryNav = [
 
 // Secondary destinations appear only in the sidebar / mobile sheet menu.
 const secondaryNav = [
+    { href: "/quotes", label: "Cotizaciones", icon: FileCheck },
     { href: "/purchases", label: "Compras", icon: ShoppingBag },
     { href: "/suppliers", label: "Proveedores", icon: Truck },
     { href: "/settings", label: "Configuración", icon: Settings },
@@ -51,8 +53,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // Auth screens render without the app chrome.
-    if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
+    // Auth screens and public share links render without the app chrome.
+    if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up") || pathname.startsWith("/i/")) {
         return <>{children}</>;
     }
 

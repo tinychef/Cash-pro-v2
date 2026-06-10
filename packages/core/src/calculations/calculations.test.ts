@@ -51,6 +51,24 @@ describe("invoiceTotals", () => {
     expect(totals.grossProfit).toBe(48);
     expect(totals.profitMargin).toBeCloseTo(0.6957, 4);
   });
+
+  it("applies per-line discounts before tax", () => {
+    // 10 units @ 20 with 10% off → subtotal 180, tax on 180; cost 10*8=80.
+    const totals = invoiceTotals([
+      item({ quantity: 10, unitPrice: 20, costPrice: 8, discountRate: 0.1 }),
+    ]);
+    expect(totals.subtotal).toBe(180);
+    expect(totals.discountTotal).toBe(20);
+    expect(totals.taxTotal).toBeCloseTo(28.8, 2); // 180 * 0.16
+    expect(totals.total).toBeCloseTo(208.8, 2);
+    expect(totals.grossProfit).toBe(100); // 180 - 80
+  });
+
+  it("treats missing discountRate as zero", () => {
+    const totals = invoiceTotals([item({ quantity: 1, unitPrice: 100, costPrice: 40 })]);
+    expect(totals.discountTotal).toBe(0);
+    expect(totals.subtotal).toBe(100);
+  });
 });
 
 describe("invoice status & balances", () => {

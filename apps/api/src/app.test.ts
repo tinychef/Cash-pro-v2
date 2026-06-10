@@ -79,4 +79,117 @@ dbDescribe("API integration (Postgres)", () => {
     const after = await parse(await app.request(`/api/products/${prod.id}`, json(companyA)));
     expect(after.stock).toBe(6);
   });
+
+  it("applies per-line discounts to invoice totals", async () => {
+    const prod = await parse(await app.request("/api/products", json(companyA, { code: "DISC", name: "Disc", purchasePrice: 8, salePrice: 20, stock: 50 }, "POST")));
+    const res = await app.request(
+      "/api/invoices",
+      json(companyA, { clientId: "", clientName: "X", dueDate: "2026-12-31", items: [{ productId: prod.id, productName: "Disc", quantity: 10, unitPrice: 20, costPrice: 8, taxRate: 0.16, discountRate: 0.1 }] }, "POST"),
+    );
+    expect(res.status).toBe(201);
+    const inv = await parse(res);
+    expect(inv.subtotal).toBe(180); // 200 - 10%
+    expect(inv.discountTotal).toBe(20);
+    expect(inv.taxTotal).toBeCloseTo(28.8, 2);
+    expect(inv.total).toBeCloseTo(208.8, 2);
+    expect(inv.grossProfit).toBe(100);
+  });
+
+  it("creates a quote without touching stock, then converts it to an invoice", async () => {
+    const prod = await parse(await app.request("/api/products", json(companyA, { code: "QUO", name: "Quotable", purchasePrice: 3, salePrice: 9, stock: 10 }, "POST")));
+
+    // Creating a quote must NOT change stock.
+    const quote = await parse(await app.request(
+      "/api/quotes",
+      json(companyA, { clientId: "", clientName: "Prospect", validUntil: "2026-12-31", items: [{ productId: prod.id, productName: "Quotable", quantity: 4, unitPrice: 9, costPrice: 3, taxRate: 0.16 }] }, "POST"),
+    ));
+    expect(quote.number).toMatch(/^COT-/);
+    expect(quote.status).toBe("draft");
+    const afterQuote = await parse(await app.request(`/api/products/${prod.id}`, json(companyA)));
+    expect(afterQuote.stock).toBe(10);
+
+    // Converting must create an invoice AND decrement stock.
+    const conv = await app.request(`/api/quotes/${quote.id}/convert`, json(companyA, {}, "POST"));
+    expect(conv.status).toBe(201);
+    const invoice = await parse(conv);
+    expect(invoice.number).toMatch(/^INV-/);
+    const afterConv = await parse(await app.request(`/api/products/${prod.id}`, json(companyA)));
+    expect(afterConv.stock).toBe(6);
+
+    // Re-converting the same quote must be rejected.
+    const again = await app.request(`/api/quotes/${quote.id}/convert`, json(companyA, {}, "POST"));
+    expect(again.status).toBe(409);
+  });
+
+  it("shares an invoice via signed public link, sanitized and token-gated", async () => {
+    const prod = await parse(await app.request("/api/products", json(companyA, { code: "PUB", name: "Pub", purchasePrice: 4, salePrice: 10, stock: 9 }, "POST")));
+    const inv = await parse(await app.request(
+      "/api/invoices",
+      json(companyA, { clientId: "", clientName: "Público", dueDate: "2026-12-31", items: [{ productId: prod.id, productName: "Pub", quantity: 2, unitPrice: 10, costPrice: 4, taxRate: 0.16 }] }, "POST"),
+    ));
+
+    // Tenant B cannot mint a share token for A's invoice.
+    const forbidden = await app.request(`/api/invoices/${inv.id}/share`, json(companyB));
+    expect(forbidden.status).toBe(404);
+
+    const { token, path } = await parse(await app.request(`/api/invoices/${inv.id}/share`, json(companyA)));
+    expect(path).toBe(`/i/${token}`);
+
+    // Public fetch works WITHOUT any auth headers...
+    const pub = await app.request(`/public/invoices/${token}`);
+    expect(pub.status).toBe(200);
+    const body = await parse(pub);
+    expect(body.number).toBe(inv.number);
+    expect(body.total).toBe(inv.total);
+    expect(body.brand.name).toBeTruthy();
+    // ...and never leaks cost/profit internals.
+    expect(body.costOfGoods).toBeUndefined();
+    expect(body.grossProfit).toBeUndefined();
+    expect(body.items[0].costPrice).toBeUndefined();
+    expect(body.companyId).toBeUndefined();
+
+    // Tampered token is rejected.
+    const bad = await app.request(`/public/invoices/${inv.id}.deadbeefdeadbeefdeadbeefdeadbeef`);
+    expect(bad.status).toBe(404);
+  });
+
+  it("email endpoints respond 503 until RESEND_API_KEY is configured", async () => {
+    delete process.env.RESEND_API_KEY;
+    const send = await app.request(
+      "/api/invoices/00000000-0000-0000-0000-000000000000/send",
+      json(companyA, { to: "x@y.com" }, "POST"),
+    );
+    expect(send.status).toBe(503);
+    const remind = await app.request("/api/invoices/remind-overdue", json(companyA, {}, "POST"));
+    expect(remind.status).toBe(503);
+  });
+
+  it("persists invoice branding in settings", async () => {
+    const logo = `data:image/png;base64,${Buffer.from("fake-png").toString("base64")}`;
+    const put = await app.request(
+      "/api/settings",
+      json(companyA, { taxId: "J-12345678-9", accentColor: "#0044ff", footerNote: "Gracias", logoDataUrl: logo }, "PUT"),
+    );
+    expect(put.status).toBe(200);
+    const got = await parse(await app.request("/api/settings", json(companyA)));
+    expect(got.taxId).toBe("J-12345678-9");
+    expect(got.accentColor).toBe("#0044ff");
+    expect(got.footerNote).toBe("Gracias");
+    expect(got.logoDataUrl).toBe(logo);
+    // Other tenant unaffected.
+    const other = await parse(await app.request("/api/settings", json(companyB)));
+    expect(other.taxId).toBe("");
+  });
+
+  it("isolates quotes per tenant", async () => {
+    const prod = await parse(await app.request("/api/products", json(companyA, { code: "QISO", name: "QIso", purchasePrice: 1, salePrice: 50, stock: 5 }, "POST")));
+    const q = await parse(await app.request(
+      "/api/quotes",
+      json(companyA, { clientId: "", clientName: "Only A", validUntil: "2026-12-31", items: [{ productId: prod.id, productName: "QIso", quantity: 1, unitPrice: 50, costPrice: 1, taxRate: 0 }] }, "POST"),
+    ));
+    const listB = await parse(await app.request("/api/quotes", json(companyB)));
+    expect(listB.some((x: { id: string }) => x.id === q.id)).toBe(false);
+    const fetchB = await app.request(`/api/quotes/${q.id}`, json(companyB));
+    expect(fetchB.status).toBe(404);
+  });
 });

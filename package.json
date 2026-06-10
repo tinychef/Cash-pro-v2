@@ -8,6 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev:up": "bash scripts/dev-up.sh",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",

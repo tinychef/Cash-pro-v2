@@ -15,6 +15,20 @@
       "when": 1780371764309,
       "tag": "0001_short_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781063273655,
+      "tag": "0002_pink_maximus",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781064031834,
+      "tag": "0003_good_spacker_dave",
+      "breakpoints": true
     }
   ]
 }

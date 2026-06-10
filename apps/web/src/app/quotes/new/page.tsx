@@ -3,21 +3,21 @@
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { currency, pct, invoiceTotals, type InvoiceItem } from "@cash-pro/core";
-import { useProducts, useCustomers, useCreateCustomer, useCreateInvoice } from "@/lib/queries";
+import { useProducts, useCustomers, useCreateCustomer, useCreateQuote } from "@/lib/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Minus, Trash2, UserPlus, ShoppingCart, Send } from "lucide-react";
+import { Search, Plus, Minus, Trash2, UserPlus, ShoppingCart, FileCheck } from "lucide-react";
 
-export default function NewInvoicePage() {
+export default function NewQuotePage() {
   const router = useRouter();
   const { data: products = [] } = useProducts();
   const { data: clients = [] } = useCustomers();
   const createCustomer = useCreateCustomer();
-  const createInvoice = useCreateInvoice();
+  const createQuote = useCreateQuote();
 
   const [clientId, setClientId] = useState("");
   const [quickClientOpen, setQuickClientOpen] = useState(false);
@@ -26,6 +26,7 @@ export default function NewInvoicePage() {
   const [productSearch, setProductSearch] = useState("");
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [notes, setNotes] = useState("");
+  const [validDays, setValidDays] = useState(15);
 
   const searchResults = useMemo(() => {
     if (!productSearch) return [];
@@ -80,7 +81,7 @@ export default function NewInvoicePage() {
       phone: quickClientPhone,
       email: "",
       address: "",
-      notes: "Creado desde factura",
+      notes: "Creado desde cotización",
     });
     setClientId(created.id);
     setQuickClientOpen(false);
@@ -92,17 +93,17 @@ export default function NewInvoicePage() {
 
   const handleSave = async () => {
     if (items.length === 0) return;
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 15);
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + (validDays || 15));
     try {
-      await createInvoice.mutateAsync({
+      await createQuote.mutateAsync({
         clientId: clientId || "",
         clientName: selectedClient?.name || "Sin cliente",
         items,
-        dueDate: dueDate.toISOString().slice(0, 10),
+        validUntil: validUntil.toISOString().slice(0, 10),
         notes,
       });
-      router.push("/invoices");
+      router.push("/quotes");
     } catch {
       /* toast handled */
     }
@@ -111,8 +112,8 @@ export default function NewInvoicePage() {
   return (
     <div className="p-4 lg:p-6 space-y-5 max-w-3xl mx-auto">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Nueva Factura</h2>
-        <p className="text-sm text-muted-foreground mt-1">Crea una factura en segundos</p>
+        <h2 className="text-2xl font-bold tracking-tight">Nueva Cotización</h2>
+        <p className="text-sm text-muted-foreground mt-1">Sin afectar inventario hasta convertirla en factura</p>
       </div>
 
       <Card className="border-0 shadow-sm">
@@ -214,9 +215,15 @@ export default function NewInvoicePage() {
       )}
 
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-4">
-          <Label className="text-xs font-medium text-muted-foreground mb-2 block">Notas (opcional)</Label>
-          <Input placeholder="Agregar notas a la factura..." value={notes} onChange={(e) => setNotes(e.target.value)} className="rounded-xl border-0 bg-secondary" />
+        <CardContent className="p-4 grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs font-medium text-muted-foreground mb-2 block">Validez (días)</Label>
+            <Input type="number" min={1} value={validDays} onChange={(e) => setValidDays(+e.target.value)} className="rounded-xl border-0 bg-secondary" />
+          </div>
+          <div>
+            <Label className="text-xs font-medium text-muted-foreground mb-2 block">Notas (opcional)</Label>
+            <Input placeholder="Notas para el cliente..." value={notes} onChange={(e) => setNotes(e.target.value)} className="rounded-xl border-0 bg-secondary" />
+          </div>
         </CardContent>
       </Card>
 
@@ -252,8 +259,8 @@ export default function NewInvoicePage() {
       </Card>
 
       <div className="space-y-2 pb-8">
-        <Button onClick={handleSave} disabled={items.length === 0 || createInvoice.isPending} className="w-full gap-2 rounded-xl h-12 text-sm font-semibold">
-          <Send className="h-4 w-4" /> {createInvoice.isPending ? "Guardando…" : "Guardar Factura"}
+        <Button onClick={handleSave} disabled={items.length === 0 || createQuote.isPending} className="w-full gap-2 rounded-xl h-12 text-sm font-semibold">
+          <FileCheck className="h-4 w-4" /> {createQuote.isPending ? "Guardando…" : "Guardar Cotización"}
         </Button>
       </div>
 
