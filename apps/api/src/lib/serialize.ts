@@ -9,6 +9,8 @@ export const numericFields = {
   products: ["purchasePrice", "salePrice", "taxRate", "profitPerUnit", "profitMargin"],
   invoices: ["subtotal", "taxTotal", "total", "costOfGoods", "grossProfit", "profitMargin"],
   invoice_items: ["quantity", "unitPrice", "costPrice", "taxRate"],
+  quotes: ["subtotal", "taxTotal", "total", "costOfGoods", "grossProfit", "profitMargin"],
+  quote_items: ["quantity", "unitPrice", "costPrice", "taxRate"],
   payments: ["amount"],
   expenses: ["amount"],
   suppliers: [] as string[],

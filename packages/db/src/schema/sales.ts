@@ -18,6 +18,15 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
 
 export const paymentMethodEnum = pgEnum("payment_method", ["cash", "card", "transfer", "other"]);
 
+export const quoteStatusEnum = pgEnum("quote_status", [
+  "draft",
+  "sent",
+  "accepted",
+  "declined",
+  "expired",
+  "converted",
+]);
+
 export const invoices = pgTable(
   "invoices",
   {
@@ -67,6 +76,63 @@ export const invoiceItems = pgTable(
     ...auditColumns,
   },
   (t) => ({ byInvoice: index("invoice_items_invoice_idx").on(t.invoiceId) }),
+);
+
+// Quotes / estimates. Mirror invoices but carry NO payment or stock
+// semantics — they are non-binding until converted into an invoice.
+export const quotes = pgTable(
+  "quotes",
+  {
+    ...idColumn,
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    number: text("number").notNull(),
+    customerId: uuid("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    customerName: text("customer_name").notNull(),
+    subtotal: numeric("subtotal", { precision: 14, scale: 2 }).notNull().default("0"),
+    taxTotal: numeric("tax_total", { precision: 14, scale: 2 }).notNull().default("0"),
+    total: numeric("total", { precision: 14, scale: 2 }).notNull().default("0"),
+    costOfGoods: numeric("cost_of_goods", { precision: 14, scale: 2 }).notNull().default("0"),
+    grossProfit: numeric("gross_profit", { precision: 14, scale: 2 }).notNull().default("0"),
+    profitMargin: numeric("profit_margin", { precision: 5, scale: 2 }).notNull().default("0"),
+    status: quoteStatusEnum("status").notNull().default("draft"),
+    validUntil: timestamp("valid_until", { withTimezone: true }),
+    // Set when this quote is converted; links to the resulting invoice.
+    convertedInvoiceId: uuid("converted_invoice_id").references(() => invoices.id, {
+      onDelete: "set null",
+    }),
+    notes: text("notes").notNull().default(""),
+    ...syncColumns,
+    ...auditColumns,
+  },
+  (t) => ({
+    byCompany: index("quotes_company_idx").on(t.companyId),
+    byStatus: index("quotes_status_idx").on(t.companyId, t.status),
+    numberUnq: uniqueIndex("quotes_number_unq").on(t.companyId, t.number),
+  }),
+);
+
+export const quoteItems = pgTable(
+  "quote_items",
+  {
+    ...idColumn,
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    quoteId: uuid("quote_id")
+      .notNull()
+      .references(() => quotes.id, { onDelete: "cascade" }),
+    productId: uuid("product_id").references(() => products.id, { onDelete: "set null" }),
+    productName: text("product_name").notNull(),
+    quantity: numeric("quantity", { precision: 12, scale: 2 }).notNull(),
+    unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
+    costPrice: numeric("cost_price", { precision: 12, scale: 2 }).notNull(),
+    taxRate: numeric("tax_rate", { precision: 5, scale: 4 }).notNull().default("0.16"),
+    ...syncColumns,
+    ...auditColumns,
+  },
+  (t) => ({ byQuote: index("quote_items_quote_idx").on(t.quoteId) }),
 );
 
 export const payments = pgTable(

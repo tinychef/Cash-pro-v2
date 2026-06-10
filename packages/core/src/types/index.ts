@@ -103,6 +103,30 @@ export interface Payment extends Partial<SyncMeta> {
   notes: string;
 }
 
+export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired" | "converted";
+
+/** A quote/estimate line — same shape as an invoice line. */
+export type QuoteItem = InvoiceItem;
+
+export interface Quote extends Partial<SyncMeta> {
+  id: string;
+  number: string;
+  clientId: string;
+  clientName: string;
+  items: QuoteItem[];
+  subtotal: number;
+  taxTotal: number;
+  total: number;
+  costTotal: number;
+  status: QuoteStatus;
+  /** Date until which the quote is valid (ISO). */
+  validUntil: string;
+  /** Set once converted; references the resulting invoice. */
+  convertedInvoiceId?: string | null;
+  createdAt: string;
+  notes: string;
+}
+
 export interface SupplierPayment extends Partial<SyncMeta> {
   id: string;
   purchaseOrderId: string;

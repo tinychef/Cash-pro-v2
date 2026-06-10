@@ -79,4 +79,42 @@ dbDescribe("API integration (Postgres)", () => {
     const after = await parse(await app.request(`/api/products/${prod.id}`, json(companyA)));
     expect(after.stock).toBe(6);
   });
+
+  it("creates a quote without touching stock, then converts it to an invoice", async () => {
+    const prod = await parse(await app.request("/api/products", json(companyA, { code: "QUO", name: "Quotable", purchasePrice: 3, salePrice: 9, stock: 10 }, "POST")));
+
+    // Creating a quote must NOT change stock.
+    const quote = await parse(await app.request(
+      "/api/quotes",
+      json(companyA, { clientId: "", clientName: "Prospect", validUntil: "2026-12-31", items: [{ productId: prod.id, productName: "Quotable", quantity: 4, unitPrice: 9, costPrice: 3, taxRate: 0.16 }] }, "POST"),
+    ));
+    expect(quote.number).toMatch(/^COT-/);
+    expect(quote.status).toBe("draft");
+    const afterQuote = await parse(await app.request(`/api/products/${prod.id}`, json(companyA)));
+    expect(afterQuote.stock).toBe(10);
+
+    // Converting must create an invoice AND decrement stock.
+    const conv = await app.request(`/api/quotes/${quote.id}/convert`, json(companyA, {}, "POST"));
+    expect(conv.status).toBe(201);
+    const invoice = await parse(conv);
+    expect(invoice.number).toMatch(/^INV-/);
+    const afterConv = await parse(await app.request(`/api/products/${prod.id}`, json(companyA)));
+    expect(afterConv.stock).toBe(6);
+
+    // Re-converting the same quote must be rejected.
+    const again = await app.request(`/api/quotes/${quote.id}/convert`, json(companyA, {}, "POST"));
+    expect(again.status).toBe(409);
+  });
+
+  it("isolates quotes per tenant", async () => {
+    const prod = await parse(await app.request("/api/products", json(companyA, { code: "QISO", name: "QIso", purchasePrice: 1, salePrice: 50, stock: 5 }, "POST")));
+    const q = await parse(await app.request(
+      "/api/quotes",
+      json(companyA, { clientId: "", clientName: "Only A", validUntil: "2026-12-31", items: [{ productId: prod.id, productName: "QIso", quantity: 1, unitPrice: 50, costPrice: 1, taxRate: 0 }] }, "POST"),
+    ));
+    const listB = await parse(await app.request("/api/quotes", json(companyB)));
+    expect(listB.some((x: { id: string }) => x.id === q.id)).toBe(false);
+    const fetchB = await app.request(`/api/quotes/${q.id}`, json(companyB));
+    expect(fetchB.status).toBe(404);
+  });
 });

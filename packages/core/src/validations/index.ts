@@ -52,6 +52,30 @@ export const invoiceInputSchema = z.object({
 });
 export type InvoiceInput = z.infer<typeof invoiceInputSchema>;
 
+export const quoteStatusSchema = z.enum([
+  "draft",
+  "sent",
+  "accepted",
+  "declined",
+  "expired",
+  "converted",
+]);
+
+export const quoteInputSchema = z.object({
+  // Optional: a quote may target a not-yet-registered prospect.
+  clientId: z.string().default(""),
+  clientName: z.string().min(1).default("Sin cliente"),
+  items: z.array(invoiceItemInputSchema).min(1, "Agrega al menos un producto"),
+  validUntil: z.string(),
+  notes: z.string().default(""),
+});
+export type QuoteInput = z.infer<typeof quoteInputSchema>;
+
+/** Allowed manual status transitions (conversion is a separate endpoint). */
+export const quoteStatusInputSchema = z.object({
+  status: z.enum(["draft", "sent", "accepted", "declined", "expired"]),
+});
+
 export const paymentInputSchema = z.object({
   invoiceId: z.string().min(1),
   amount: z.number().positive(),

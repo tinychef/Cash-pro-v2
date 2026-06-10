@@ -20,6 +20,7 @@ import { requireWrite } from "./middleware/authz.js";
 import { rateLimit } from "./middleware/rate-limit.js";
 import { crudRouter } from "./lib/crud.js";
 import { invoicesRouter } from "./routes/invoices.js";
+import { quotesRouter } from "./routes/quotes.js";
 import { paymentsRouter } from "./routes/payments.js";
 import { reportsRouter } from "./routes/reports.js";
 import { settingsRouter } from "./routes/settings.js";
@@ -76,6 +77,7 @@ export function createApp() {
   api.route("/suppliers", crudRouter(suppliers, supplierInputSchema, "suppliers"));
   api.route("/expenses", crudRouter(expenses, expenseInputSchema, "expenses"));
   api.route("/invoices", invoicesRouter);
+  api.route("/quotes", quotesRouter);
   api.route("/payments", paymentsRouter);
   api.route("/purchases", purchasesRouter);
   api.route("/supplier-payments", supplierPaymentsRouter);
