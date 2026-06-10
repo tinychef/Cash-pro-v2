@@ -85,6 +85,7 @@ quotesRouter.post("/", zValidator("json", quoteInputSchema), async (c) => {
           customerId: input.clientId || null,
           customerName: input.clientName,
           subtotal: String(totals.subtotal),
+          discountTotal: String(totals.discountTotal),
           taxTotal: String(totals.taxTotal),
           total: String(totals.total),
           costOfGoods: String(totals.costTotal),
@@ -107,6 +108,7 @@ quotesRouter.post("/", zValidator("json", quoteInputSchema), async (c) => {
           unitPrice: String(it.unitPrice),
           costPrice: String(it.costPrice),
           taxRate: String(it.taxRate),
+          discountRate: String(it.discountRate ?? 0),
           createdBy: userId,
         })),
       );
@@ -171,6 +173,7 @@ quotesRouter.post("/:id/convert", async (c) => {
     unitPrice: Number(it.unitPrice),
     costPrice: Number(it.costPrice),
     taxRate: Number(it.taxRate),
+    discountRate: Number(it.discountRate ?? 0),
   }));
   const totals = invoiceTotals(pricedLines);
   const today = new Date().toISOString().slice(0, 10);
@@ -221,6 +224,7 @@ quotesRouter.post("/:id/convert", async (c) => {
           customerId: quote.customerId,
           customerName: quote.customerName,
           subtotal: String(totals.subtotal),
+          discountTotal: String(totals.discountTotal),
           taxTotal: String(totals.taxTotal),
           total: String(totals.total),
           costOfGoods: String(totals.costTotal),
@@ -245,6 +249,7 @@ quotesRouter.post("/:id/convert", async (c) => {
           unitPrice: String(it.unitPrice),
           costPrice: String(it.costPrice),
           taxRate: String(it.taxRate),
+          discountRate: String(it.discountRate),
           createdBy: userId,
         })),
       );

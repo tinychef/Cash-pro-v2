@@ -105,6 +105,7 @@ invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
         customerId: input.clientId || null,
         customerName: input.clientName,
         subtotal: String(totals.subtotal),
+        discountTotal: String(totals.discountTotal),
         taxTotal: String(totals.taxTotal),
         total: String(totals.total),
         costOfGoods: String(totals.costTotal),
@@ -129,6 +130,7 @@ invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {
         unitPrice: String(it.unitPrice),
         costPrice: String(it.costPrice),
         taxRate: String(it.taxRate),
+        discountRate: String(it.discountRate ?? 0),
         createdBy: userId,
       })),
     );

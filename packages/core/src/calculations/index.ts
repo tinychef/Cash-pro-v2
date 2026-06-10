@@ -11,6 +11,8 @@ export type PricedLine = {
   unitPrice: number;
   costPrice: number;
   taxRate: number;
+  /** Per-line discount as a ratio 0..1 (0.10 = 10% off). Optional, default 0. */
+  discountRate?: number;
 };
 
 /** Round to 2 decimals deterministically (avoids float cent drift). */
@@ -41,6 +43,8 @@ export function lineProfit(quantity: number, salePrice: number, purchasePrice: n
 
 export interface InvoiceTotals {
   subtotal: number;
+  /** Sum of per-line discounts (informative; subtotal is already net of it). */
+  discountTotal: number;
   taxTotal: number;
   total: number;
   costTotal: number;
@@ -56,24 +60,30 @@ export interface InvoiceTotals {
  */
 export function invoiceTotals(items: PricedLine[]): InvoiceTotals {
   let subtotal = 0;
+  let discountTotal = 0;
   let taxTotal = 0;
   let costTotal = 0;
 
   for (const item of items) {
-    const lineSubtotal = item.unitPrice * item.quantity;
+    const gross = item.unitPrice * item.quantity;
+    const discount = gross * (item.discountRate ?? 0);
+    const lineSubtotal = gross - discount;
     subtotal += lineSubtotal;
+    discountTotal += discount;
+    // Tax applies to the discounted amount.
     taxTotal += lineSubtotal * item.taxRate;
     costTotal += item.costPrice * item.quantity;
   }
 
   subtotal = round2(subtotal);
+  discountTotal = round2(discountTotal);
   taxTotal = round2(taxTotal);
   costTotal = round2(costTotal);
   const total = round2(subtotal + taxTotal);
   const grossProfit = round2(subtotal - costTotal);
   const profitMargin = subtotal > 0 ? grossProfit / subtotal : 0;
 
-  return { subtotal, taxTotal, total, costTotal, grossProfit, profitMargin };
+  return { subtotal, discountTotal, taxTotal, total, costTotal, grossProfit, profitMargin };
 }
 
 /** Sum of payments applied to a given invoice. */

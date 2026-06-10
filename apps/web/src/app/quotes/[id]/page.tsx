@@ -86,15 +86,21 @@ export default function QuoteDetailPage() {
             <div key={it.id} className="flex items-center justify-between text-sm">
               <div className="min-w-0">
                 <p className="font-medium truncate">{it.productName}</p>
-                <p className="text-xs text-muted-foreground">{currency(it.unitPrice)} × {it.quantity}</p>
+                <p className="text-xs text-muted-foreground">{currency(it.unitPrice)} × {it.quantity}{(it.discountRate ?? 0) > 0 ? ` · −${Math.round((it.discountRate ?? 0) * 100)}%` : ""}</p>
               </div>
-              <span className="font-semibold">{currency(it.unitPrice * it.quantity)}</span>
+              <span className="font-semibold">{currency(it.unitPrice * it.quantity * (1 - (it.discountRate ?? 0)))}</span>
             </div>
           ))}
           <div className="pt-2 border-t border-border flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
             <span>{currency(quote.subtotal)}</span>
           </div>
+          {(quote.discountTotal ?? 0) > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Descuento</span>
+              <span className="text-emerald-600">−{currency(quote.discountTotal ?? 0)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Impuesto</span>
             <span>{currency(quote.taxTotal)}</span>

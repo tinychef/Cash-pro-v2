@@ -40,6 +40,8 @@ export const invoiceItemInputSchema = z.object({
   unitPrice: z.number().nonnegative(),
   costPrice: z.number().nonnegative(),
   taxRate: z.number().min(0).max(1),
+  // Per-line discount ratio 0..1 (0.10 = 10% off).
+  discountRate: z.number().min(0).max(1).default(0),
 });
 
 export const invoiceInputSchema = z.object({

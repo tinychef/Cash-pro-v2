@@ -12,6 +12,7 @@ interface ApiInvoiceDetail {
   createdAt: string;
   dueDate: string | null;
   subtotal: number;
+  discountTotal?: number;
   taxTotal: number;
   total: number;
   notes: string;
@@ -20,6 +21,7 @@ interface ApiInvoiceDetail {
     productName: string;
     quantity: number;
     unitPrice: number;
+    discountRate?: number;
   }[];
 }
 
@@ -74,7 +76,7 @@ function InvoiceDoc({ inv }: { inv: ApiInvoiceDetail }) {
             <Text style={styles.cName}>{it.productName}</Text>
             <Text style={styles.cQty}>{it.quantity}</Text>
             <Text style={styles.cPrice}>{currency(it.unitPrice)}</Text>
-            <Text style={styles.cTotal}>{currency(it.unitPrice * it.quantity)}</Text>
+            <Text style={styles.cTotal}>{currency(it.unitPrice * it.quantity * (1 - (it.discountRate ?? 0)))}</Text>
           </View>
         ))}
 
@@ -83,6 +85,12 @@ function InvoiceDoc({ inv }: { inv: ApiInvoiceDetail }) {
             <Text style={styles.muted}>Subtotal</Text>
             <Text>{currency(inv.subtotal)}</Text>
           </View>
+          {(inv.discountTotal ?? 0) > 0 ? (
+            <View style={styles.totalRow}>
+              <Text style={styles.muted}>Descuento</Text>
+              <Text>−{currency(inv.discountTotal ?? 0)}</Text>
+            </View>
+          ) : null}
           <View style={styles.totalRow}>
             <Text style={styles.muted}>Impuesto</Text>
             <Text>{currency(inv.taxTotal)}</Text>

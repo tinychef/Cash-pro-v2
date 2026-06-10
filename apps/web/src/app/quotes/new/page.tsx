@@ -67,6 +67,10 @@ export default function NewQuotePage() {
     );
   };
   const removeItem = (itemId: string) => setItems(items.filter((i) => i.id !== itemId));
+  const setDiscount = (itemId: string, percent: number) => {
+    const rate = Math.min(100, Math.max(0, percent)) / 100;
+    setItems(items.map((i) => (i.id === itemId ? { ...i, discountRate: rate } : i)));
+  };
 
   const totals = invoiceTotals(items);
 
@@ -170,7 +174,24 @@ export default function NewQuotePage() {
               <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{item.productName}</p>
-                  <p className="text-xs text-muted-foreground">{currency(item.unitPrice)} × {item.quantity}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {currency(item.unitPrice)} × {item.quantity}
+                    {(item.discountRate ?? 0) > 0 && (
+                      <span className="text-emerald-600 font-medium"> · −{Math.round((item.discountRate ?? 0) * 100)}%</span>
+                    )}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-[10px] text-muted-foreground">Desc.</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={Math.round((item.discountRate ?? 0) * 100)}
+                      onChange={(e) => setDiscount(item.id, +e.target.value)}
+                      className="w-12 h-6 rounded-md bg-background border border-border text-xs text-center"
+                    />
+                    <span className="text-[10px] text-muted-foreground">%</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="flex items-center gap-1 bg-background rounded-lg border border-border">
@@ -182,7 +203,7 @@ export default function NewQuotePage() {
                       <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  <span className="text-sm font-bold w-20 text-right">{currency(item.unitPrice * item.quantity)}</span>
+                  <span className="text-sm font-bold w-20 text-right">{currency(item.unitPrice * item.quantity * (1 - (item.discountRate ?? 0)))}</span>
                   <button className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors" onClick={() => removeItem(item.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -212,6 +233,12 @@ export default function NewQuotePage() {
             <span className="text-muted-foreground">Subtotal</span>
             <span>{currency(totals.subtotal)}</span>
           </div>
+          {totals.discountTotal > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Descuento</span>
+              <span className="text-emerald-600">−{currency(totals.discountTotal)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Impuesto</span>
             <span>{currency(totals.taxTotal)}</span>

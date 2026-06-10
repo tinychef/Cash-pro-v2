@@ -80,6 +80,21 @@ dbDescribe("API integration (Postgres)", () => {
     expect(after.stock).toBe(6);
   });
 
+  it("applies per-line discounts to invoice totals", async () => {
+    const prod = await parse(await app.request("/api/products", json(companyA, { code: "DISC", name: "Disc", purchasePrice: 8, salePrice: 20, stock: 50 }, "POST")));
+    const res = await app.request(
+      "/api/invoices",
+      json(companyA, { clientId: "", clientName: "X", dueDate: "2026-12-31", items: [{ productId: prod.id, productName: "Disc", quantity: 10, unitPrice: 20, costPrice: 8, taxRate: 0.16, discountRate: 0.1 }] }, "POST"),
+    );
+    expect(res.status).toBe(201);
+    const inv = await parse(res);
+    expect(inv.subtotal).toBe(180); // 200 - 10%
+    expect(inv.discountTotal).toBe(20);
+    expect(inv.taxTotal).toBeCloseTo(28.8, 2);
+    expect(inv.total).toBeCloseTo(208.8, 2);
+    expect(inv.grossProfit).toBe(100);
+  });
+
   it("creates a quote without touching stock, then converts it to an invoice", async () => {
     const prod = await parse(await app.request("/api/products", json(companyA, { code: "QUO", name: "Quotable", purchasePrice: 3, salePrice: 9, stock: 10 }, "POST")));
 
