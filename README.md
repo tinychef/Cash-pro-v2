@@ -57,8 +57,19 @@ Tooling    Turborepo · pnpm · Vitest · GitHub Actions CI
 ## 🚀 Desarrollo local
 
 ```bash
+# ⚡ Un solo comando: levanta Postgres, migra y arranca API + Web
 pnpm install
+pnpm dev:up        # → http://localhost:3000
+```
 
+`pnpm dev:up` (script `scripts/dev-up.sh`) crea `.env` desde `.env.example`, reutiliza
+un Postgres si ya hay uno o arranca un contenedor `postgres:16`, aplica migraciones y
+lanza API + Web juntos. Sin Clerk, la web crea sola una empresa demo con datos de ejemplo.
+
+<details>
+<summary>Alternativas (Docker completo / pasos manuales)</summary>
+
+```bash
 # Opción A — todo con Docker (postgres + api + web)
 docker compose -f docker/docker-compose.yml up
 
@@ -70,6 +81,7 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/cashpro pnpm --filter @
 #  3) Web
 pnpm --filter @cash-pro/web dev   # http://localhost:3000
 ```
+</details>
 
 > En modo dev (sin `CLERK_SECRET_KEY`), la web crea automáticamente una empresa demo con datos
 > de ejemplo vía `POST /dev/bootstrap`. Con Clerk configurado, la Organización resuelve la empresa.
