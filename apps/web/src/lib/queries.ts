@@ -48,6 +48,15 @@ export interface CompanySettings {
   currency: string;
   locale: string;
   defaultTaxRate: number;
+  // ---- Invoice branding ----
+  taxId: string;
+  address: string;
+  phone: string;
+  email: string;
+  accentColor: string;
+  footerNote: string;
+  /** Small inline logo (data URL). Swaps to R2-hosted URL later. */
+  logoDataUrl: string;
 }
 
 // ---- Invoice shape from API (customer* naming) -> UI (client* naming) ----

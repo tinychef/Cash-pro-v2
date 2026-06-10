@@ -121,6 +121,23 @@ dbDescribe("API integration (Postgres)", () => {
     expect(again.status).toBe(409);
   });
 
+  it("persists invoice branding in settings", async () => {
+    const logo = `data:image/png;base64,${Buffer.from("fake-png").toString("base64")}`;
+    const put = await app.request(
+      "/api/settings",
+      json(companyA, { taxId: "J-12345678-9", accentColor: "#0044ff", footerNote: "Gracias", logoDataUrl: logo }, "PUT"),
+    );
+    expect(put.status).toBe(200);
+    const got = await parse(await app.request("/api/settings", json(companyA)));
+    expect(got.taxId).toBe("J-12345678-9");
+    expect(got.accentColor).toBe("#0044ff");
+    expect(got.footerNote).toBe("Gracias");
+    expect(got.logoDataUrl).toBe(logo);
+    // Other tenant unaffected.
+    const other = await parse(await app.request("/api/settings", json(companyB)));
+    expect(other.taxId).toBe("");
+  });
+
   it("isolates quotes per tenant", async () => {
     const prod = await parse(await app.request("/api/products", json(companyA, { code: "QISO", name: "QIso", purchasePrice: 1, salePrice: 50, stock: 5 }, "POST")));
     const q = await parse(await app.request(

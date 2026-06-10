@@ -2,9 +2,20 @@
 // Client-side invoice PDF generation (@react-pdf/renderer).
 // Works offline — no server round-trip for rendering.
 // ============================================================
-import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
 import { currency } from "@cash-pro/core";
 import { api } from "./api";
+
+interface Brand {
+  name: string;
+  taxId?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  accentColor?: string;
+  footerNote?: string;
+  logoDataUrl?: string;
+}
 
 interface ApiInvoiceDetail {
   number: string;
@@ -44,14 +55,26 @@ const styles = StyleSheet.create({
   notes: { marginTop: 24, color: "#666" },
 });
 
-function InvoiceDoc({ inv }: { inv: ApiInvoiceDetail }) {
+function InvoiceDoc({ inv, brand }: { inv: ApiInvoiceDetail; brand: Brand }) {
+  const accent = brand.accentColor || "#16a34a";
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.brand}>Cash Pro</Text>
-            <Text style={styles.muted}>Factura</Text>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            {brand.logoDataUrl ? (
+              // eslint-disable-next-line jsx-a11y/alt-text
+              <Image src={brand.logoDataUrl} style={{ width: 44, height: 44, objectFit: "contain" }} />
+            ) : null}
+            <View>
+              <Text style={[styles.brand, { color: accent }]}>{brand.name || "Cash Pro"}</Text>
+              <Text style={styles.muted}>Factura</Text>
+              {brand.taxId ? <Text style={styles.muted}>{brand.taxId}</Text> : null}
+              {brand.address ? <Text style={styles.muted}>{brand.address}</Text> : null}
+              {(brand.phone || brand.email) ? (
+                <Text style={styles.muted}>{[brand.phone, brand.email].filter(Boolean).join(" · ")}</Text>
+              ) : null}
+            </View>
           </View>
           <View style={{ textAlign: "right" }}>
             <Text style={styles.h2}>{inv.number}</Text>
@@ -96,20 +119,26 @@ function InvoiceDoc({ inv }: { inv: ApiInvoiceDetail }) {
             <Text>{currency(inv.taxTotal)}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text style={styles.grand}>Total</Text>
-            <Text style={styles.grand}>{currency(inv.total)}</Text>
+            <Text style={[styles.grand, { color: accent }]}>Total</Text>
+            <Text style={[styles.grand, { color: accent }]}>{currency(inv.total)}</Text>
           </View>
         </View>
 
         {inv.notes ? <Text style={styles.notes}>Notas: {inv.notes}</Text> : null}
+        {brand.footerNote ? (
+          <Text style={[styles.notes, { textAlign: "center", marginTop: 32 }]}>{brand.footerNote}</Text>
+        ) : null}
       </Page>
     </Document>
   );
 }
 
 export async function downloadInvoicePdf(invoiceId: string) {
-  const inv = await api.get<ApiInvoiceDetail>(`/invoices/${invoiceId}`);
-  const blob = await pdf(<InvoiceDoc inv={inv} />).toBlob();
+  const [inv, brand] = await Promise.all([
+    api.get<ApiInvoiceDetail>(`/invoices/${invoiceId}`),
+    api.get<Brand>("/settings").catch(() => ({ name: "" }) as Brand),
+  ]);
+  const blob = await pdf(<InvoiceDoc inv={inv} brand={brand} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
