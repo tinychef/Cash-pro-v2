@@ -66,13 +66,13 @@ Sin esto, nada más importa. Requiere cuentas/keys (las eliges tú).
 
 ### Fase 1 — "Enviar y cobrar" (paridad con lo esencial de Simple Invoice)  *(~1–2 semanas)*
 - [ ] **Almacenamiento de archivos (R2 S3-compatible)** → subir logo de empresa.
-- [ ] **Marca en factura/PDF**: logo, color de acento, datos fiscales, notas/términos, vencimiento.
-- [ ] **Link público de factura** (token firmado) — ver/descargar sin login.
+- [x] **Marca en factura/PDF**: logo, color de acento, datos fiscales, nota al pie. *(logo inline; migra a R2 con keys)*
+- [x] **Link público de factura** (token firmado HMAC) — ver/descargar sin login, payload sin costos/utilidad.
 - [ ] **Envío por email** (Resend o Postmark) del PDF + link, detrás de env vars.
-- [ ] **Cotizaciones/Presupuestos**: módulo nuevo + **convertir a factura** (reusa invoice engine).
+- [x] **Cotizaciones/Presupuestos**: módulo completo + **convertir a factura** atómico.
 - [ ] **Link de pago online (Stripe Checkout)** + webhook → marca la factura como pagada.
 - [ ] **Recordatorios de vencimiento** (email automático a facturas overdue).
-- [ ] **Descuento e impuesto a nivel de línea** + **moneda por factura**.
+- [x] **Descuento a nivel de línea** (aplicado antes del impuesto) · [ ] impuesto por línea editable en UI · [ ] moneda por factura.
 - **Hecho cuando:** puedo crear una cotización, convertirla, enviarla por email con mi logo,
   y el cliente paga online y la factura se concilia sola.
 

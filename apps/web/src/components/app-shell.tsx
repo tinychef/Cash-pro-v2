@@ -53,8 +53,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // Auth screens render without the app chrome.
-    if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
+    // Auth screens and public share links render without the app chrome.
+    if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up") || pathname.startsWith("/i/")) {
         return <>{children}</>;
     }
 

@@ -133,11 +133,8 @@ function InvoiceDoc({ inv, brand }: { inv: ApiInvoiceDetail; brand: Brand }) {
   );
 }
 
-export async function downloadInvoicePdf(invoiceId: string) {
-  const [inv, brand] = await Promise.all([
-    api.get<ApiInvoiceDetail>(`/invoices/${invoiceId}`),
-    api.get<Brand>("/settings").catch(() => ({ name: "" }) as Brand),
-  ]);
+/** Render and download from already-fetched data (used by the public link page). */
+export async function downloadInvoicePdfFromData(inv: ApiInvoiceDetail, brand: Brand) {
   const blob = await pdf(<InvoiceDoc inv={inv} brand={brand} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -147,4 +144,14 @@ export async function downloadInvoicePdf(invoiceId: string) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+export type { ApiInvoiceDetail, Brand };
+
+export async function downloadInvoicePdf(invoiceId: string) {
+  const [inv, brand] = await Promise.all([
+    api.get<ApiInvoiceDetail>(`/invoices/${invoiceId}`),
+    api.get<Brand>("/settings").catch(() => ({ name: "" }) as Brand),
+  ]);
+  await downloadInvoicePdfFromData(inv, brand);
 }

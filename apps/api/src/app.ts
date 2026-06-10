@@ -26,6 +26,7 @@ import { reportsRouter } from "./routes/reports.js";
 import { settingsRouter } from "./routes/settings.js";
 import { purchasesRouter, supplierPaymentsRouter } from "./routes/purchases.js";
 import { devRouter } from "./routes/dev.js";
+import { publicRouter } from "./routes/public.js";
 
 export function createApp() {
   const app = new Hono<AppEnv>();
@@ -62,6 +63,9 @@ export function createApp() {
 
   // Dev bootstrap (no tenant; self-disables when Clerk is configured).
   app.route("/dev", devRouter);
+
+  // Public share links (no auth; gated by signed tokens, sanitized payloads).
+  app.route("/public", publicRouter);
 
   const api = new Hono<AppEnv>();
 

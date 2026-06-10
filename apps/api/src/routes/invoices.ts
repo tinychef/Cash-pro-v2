@@ -19,6 +19,7 @@ import type { AppEnv } from "../context.js";
 import { serialize, serializeList } from "../lib/serialize.js";
 import { withUniqueRetry } from "../lib/retry.js";
 import { parsePaging } from "../lib/paging.js";
+import { signInvoiceToken } from "../lib/share.js";
 
 export const invoicesRouter = new Hono<AppEnv>();
 
@@ -48,6 +49,21 @@ invoicesRouter.get("/:id", async (c) => {
   if (!invoice) return c.json({ error: "Not found" }, 404);
   const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
   return c.json({ ...serialize("invoices", invoice), items: serializeList("invoice_items", items) });
+});
+
+// Issue a signed public-share token (the link itself is built client-side).
+invoicesRouter.get("/:id/share", async (c) => {
+  const db = c.get("db");
+  const companyId = c.get("companyId");
+  const id = c.req.param("id");
+  const [invoice] = await db
+    .select({ id: invoices.id })
+    .from(invoices)
+    .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)))
+    .limit(1);
+  if (!invoice) return c.json({ error: "Not found" }, 404);
+  const token = signInvoiceToken(id);
+  return c.json({ token, path: `/i/${token}` });
 });
 
 invoicesRouter.post("/", zValidator("json", invoiceInputSchema), async (c) => {

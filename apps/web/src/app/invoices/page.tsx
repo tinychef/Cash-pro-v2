@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, FileText, CreditCard, Download } from "lucide-react";
+import { Search, Plus, FileText, CreditCard, Download, Link2 } from "lucide-react";
+import { api } from "@/lib/api";
 import { LoadingState, ErrorState, EmptyState } from "@/components/states";
 import { toast } from "sonner";
 
@@ -76,6 +77,17 @@ export default function InvoicesPage() {
       setPayDialogOpen(false);
     } catch {
       /* toast handled */
+    }
+  };
+
+  const handleShare = async (id: string) => {
+    try {
+      const { path } = await api.get<{ path: string }>(`/invoices/${id}/share`);
+      const url = `${window.location.origin}${path}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Link público copiado — compártelo con tu cliente");
+    } catch (e) {
+      toast.error((e as Error).message);
     }
   };
 
@@ -174,6 +186,9 @@ export default function InvoicesPage() {
                     )}
                     <Button variant="outline" size="sm" className="flex-1 gap-2 rounded-xl text-xs" disabled={downloadingId === inv.id} onClick={() => handleDownload(inv.id)}>
                       <Download className="h-3.5 w-3.5" /> {downloadingId === inv.id ? "Generando…" : "PDF"}
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-2 rounded-xl text-xs" onClick={() => handleShare(inv.id)} aria-label="Copiar link público">
+                      <Link2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </CardContent>

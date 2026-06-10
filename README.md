@@ -24,7 +24,8 @@
 | 💳 **Pagos** | Estados automáticos (pendiente → parcial → pagada → vencida) al registrar pagos. |
 | 💸 **Gastos** | Registro por categoría que alimenta el P&L y el flujo de caja. |
 | 📈 **Reportes** | Estado de resultados (P&L), flujo de efectivo acumulado y márgenes, por rango de fechas. |
-| 🧾 **PDF** | Generación de facturas en PDF en el navegador (offline-capable). |
+| 🧾 **PDF con tu marca** | Logo, color, datos fiscales y nota al pie en el PDF generado en el navegador (offline-capable). |
+| 🔗 **Link público** | Comparte la factura con un link firmado: tu cliente la ve y descarga el PDF **sin iniciar sesión**. |
 | ⚙️ **Configuración** | Nombre de empresa, moneda e impuesto por defecto. |
 
 ## 🏗️ Arquitectura (monorepo Turborepo + pnpm)

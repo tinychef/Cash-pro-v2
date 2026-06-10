@@ -121,6 +121,38 @@ dbDescribe("API integration (Postgres)", () => {
     expect(again.status).toBe(409);
   });
 
+  it("shares an invoice via signed public link, sanitized and token-gated", async () => {
+    const prod = await parse(await app.request("/api/products", json(companyA, { code: "PUB", name: "Pub", purchasePrice: 4, salePrice: 10, stock: 9 }, "POST")));
+    const inv = await parse(await app.request(
+      "/api/invoices",
+      json(companyA, { clientId: "", clientName: "Público", dueDate: "2026-12-31", items: [{ productId: prod.id, productName: "Pub", quantity: 2, unitPrice: 10, costPrice: 4, taxRate: 0.16 }] }, "POST"),
+    ));
+
+    // Tenant B cannot mint a share token for A's invoice.
+    const forbidden = await app.request(`/api/invoices/${inv.id}/share`, json(companyB));
+    expect(forbidden.status).toBe(404);
+
+    const { token, path } = await parse(await app.request(`/api/invoices/${inv.id}/share`, json(companyA)));
+    expect(path).toBe(`/i/${token}`);
+
+    // Public fetch works WITHOUT any auth headers...
+    const pub = await app.request(`/public/invoices/${token}`);
+    expect(pub.status).toBe(200);
+    const body = await parse(pub);
+    expect(body.number).toBe(inv.number);
+    expect(body.total).toBe(inv.total);
+    expect(body.brand.name).toBeTruthy();
+    // ...and never leaks cost/profit internals.
+    expect(body.costOfGoods).toBeUndefined();
+    expect(body.grossProfit).toBeUndefined();
+    expect(body.items[0].costPrice).toBeUndefined();
+    expect(body.companyId).toBeUndefined();
+
+    // Tampered token is rejected.
+    const bad = await app.request(`/public/invoices/${inv.id}.deadbeefdeadbeefdeadbeefdeadbeef`);
+    expect(bad.status).toBe(404);
+  });
+
   it("persists invoice branding in settings", async () => {
     const logo = `data:image/png;base64,${Buffer.from("fake-png").toString("base64")}`;
     const put = await app.request(
