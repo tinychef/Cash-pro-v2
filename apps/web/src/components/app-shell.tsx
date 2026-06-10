@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
     FileText,
+    FileCheck,
     Package,
     Users,
     BarChart3,
@@ -40,6 +41,7 @@ const primaryNav = [
 
 // Secondary destinations appear only in the sidebar / mobile sheet menu.
 const secondaryNav = [
+    { href: "/quotes", label: "Cotizaciones", icon: FileCheck },
     { href: "/purchases", label: "Compras", icon: ShoppingBag },
     { href: "/suppliers", label: "Proveedores", icon: Truck },
     { href: "/settings", label: "Configuración", icon: Settings },

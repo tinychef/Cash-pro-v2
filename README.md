@@ -18,6 +18,7 @@
 |--------|-------------|
 | 📊 **Dashboard** | KPIs en tiempo real: ventas del día, utilidad, cuentas por cobrar, flujo de caja neto + gráfico ingresos vs gastos. |
 | ⚡ **Facturación rápida** | Factura en <30s con búsqueda de productos y **margen/utilidad en vivo**. Descuenta inventario automáticamente. |
+| 🧮 **Cotizaciones** | Crea presupuestos sin tocar inventario y **conviértelos en factura con un clic** (asigna número, descuenta stock y registra el movimiento de forma atómica). |
 | 📦 **Productos** | Precio de **compra vs venta** separados; margen y ganancia/unidad calculados en la base de datos (columnas GENERATED). Alertas de stock bajo. |
 | 👥 **Clientes / Proveedores** | CRUD completo; balance de cuentas por cobrar por cliente. |
 | 💳 **Pagos** | Estados automáticos (pendiente → parcial → pagada → vencida) al registrar pagos. |
